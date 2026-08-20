@@ -121,3 +121,37 @@ fn enumerate() -> Vec<AppData> {
     kept.sort_by(|a, b| a.label().to_ascii_lowercase().cmp(&b.label().to_ascii_lowercase()));
     kept.into_iter().map(RunningApp::into_app_data).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn running(name: &str, display: Option<&str>, path: Option<&str>) -> RunningApp {
+        RunningApp {
+            pid: 1,
+            name: name.to_string(),
+            exe_path: path.map(PathBuf::from),
+            display_name: display.map(str::to_owned),
+            has_window: true,
+            registered: false,
+        }
+    }
+
+    #[test]
+    fn label_prefers_display_name() {
+        assert_eq!(running("chrome.exe", Some("Google Chrome"), None).label(), "Google Chrome");
+    }
+
+    #[test]
+    fn label_falls_back_to_name() {
+        assert_eq!(running("chrome.exe", None, None).label(), "chrome.exe");
+    }
+
+    #[test]
+    fn into_app_data_uses_label_and_path() {
+        let data =
+            running("chrome.exe", Some("Google Chrome"), Some("C:\\c\\chrome.exe")).into_app_data();
+        assert_eq!(data.display_name, "Google Chrome");
+        assert_eq!(data.path, Some(PathBuf::from("C:\\c\\chrome.exe")));
+    }
+}

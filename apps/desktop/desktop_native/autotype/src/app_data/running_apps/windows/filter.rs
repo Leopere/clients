@@ -5,6 +5,7 @@
 //! the kept apps are returned; dropped candidates (and which step dropped them) are emitted at
 //! `debug` level via `tracing`, so the filtering is auditable without being part of the API.
 
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use tracing::debug;
@@ -141,14 +142,96 @@ fn name_matches(name: &str, list: &[&str]) -> bool {
 
 /// Is the executable under `%SystemRoot%` (typically `C:\Windows`)?
 fn is_under_system_root(path: &Path) -> bool {
-    let Some(system_root) = std::env::var_os("SystemRoot").or_else(|| std::env::var_os("windir"))
-    else {
-        return false;
-    };
+    match std::env::var_os("SystemRoot").or_else(|| std::env::var_os("windir")) {
+        Some(root) => is_under_root(path, &root),
+        None => false,
+    }
+}
+
+/// Case-insensitive, component-aware "is `path` under `system_root`?" — split out from the env
+/// lookup so it can be unit-tested without touching global environment variables.
+fn is_under_root(path: &Path, system_root: &OsStr) -> bool {
     // Compare on component boundaries so a sibling like `C:\Windows.old\…` does NOT match
     // `C:\Windows`, and lowercase both sides first since Windows paths are case-insensitive
     // (`Path::starts_with` itself is case-sensitive).
     let root = PathBuf::from(system_root.to_string_lossy().to_ascii_lowercase());
     let path = PathBuf::from(path.to_string_lossy().to_ascii_lowercase());
     path.starts_with(&root)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn app(pid: u32, name: &str, exe_path: Option<&str>, has_window: bool, registered: bool) -> RunningApp {
+        RunningApp {
+            pid,
+            name: name.to_string(),
+            exe_path: exe_path.map(PathBuf::from),
+            display_name: None,
+            has_window,
+            registered,
+        }
+    }
+
+    #[test]
+    fn exclude_self_drops_only_matching_pid() {
+        let step = ExcludeSelf { self_pid: 100 };
+        assert!(!step.keep(&app(100, "a.exe", None, true, true)));
+        assert!(step.keep(&app(200, "a.exe", None, true, true)));
+    }
+
+    #[test]
+    fn is_under_root_is_case_insensitive_and_component_aware() {
+        assert!(is_under_root(Path::new("C:\\Windows\\System32\\notepad.exe"), OsStr::new("C:\\Windows")));
+        // Case-insensitive on both sides.
+        assert!(is_under_root(Path::new("c:\\windows\\x.exe"), OsStr::new("C:\\WINDOWS")));
+        // Sibling directory must NOT match (component boundary, not raw prefix).
+        assert!(!is_under_root(Path::new("C:\\Windows.old\\x.exe"), OsStr::new("C:\\Windows")));
+        // Unrelated path.
+        assert!(!is_under_root(Path::new("D:\\Apps\\x.exe"), OsStr::new("C:\\Windows")));
+    }
+
+    #[test]
+    fn exclude_system_paths_keeps_non_system_and_pathless() {
+        let step = ExcludeSystemPaths;
+        assert!(step.keep(&app(1, "x.exe", Some("D:\\Apps\\x.exe"), true, false)));
+        assert!(step.keep(&app(1, "x.exe", None, true, false)));
+    }
+
+    #[test]
+    fn exclude_shell_surface_matches_case_insensitively() {
+        let step = ExcludeShellSurface;
+        assert!(!step.keep(&app(1, "Explorer.EXE", None, true, false)));
+        assert!(step.keep(&app(1, "chrome.exe", None, true, false)));
+    }
+
+    #[test]
+    fn exclude_background_noise_drops_listed_helpers() {
+        let step = ExcludeBackgroundNoise;
+        assert!(!step.keep(&app(1, "vctip.exe", None, true, false)));
+        assert!(step.keep(&app(1, "code.exe", None, true, false)));
+    }
+
+    #[test]
+    fn exclude_unregistered_background_keeps_windowed_or_registered() {
+        let step = ExcludeUnregisteredBackground;
+        assert!(!step.keep(&app(1, "x.exe", None, false, false)));
+        assert!(step.keep(&app(1, "x.exe", None, true, false)));
+        assert!(step.keep(&app(1, "x.exe", None, false, true)));
+    }
+
+    #[test]
+    fn apply_drops_shell_and_noise_keeps_real_apps() {
+        // Pids chosen to not collide with the test process (ExcludeSelf uses the real pid).
+        let candidates = vec![
+            app(4242, "chrome.exe", Some("D:\\Apps\\chrome.exe"), true, true),
+            app(4243, "explorer.exe", Some("D:\\x\\explorer.exe"), true, false), // shell surface
+            app(4244, "vctip.exe", Some("D:\\x\\vctip.exe"), true, false),       // background noise
+            app(4245, "helper.exe", None, false, false),                         // windowless unregistered
+        ];
+        let kept = apply(candidates);
+        let names: Vec<&str> = kept.iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(names, vec!["chrome.exe"]);
+    }
 }

@@ -28,8 +28,10 @@ mod window_source;
 /// Build the raw list of running apps (Source A ∪ Source B), deduped and identity-resolved.
 pub(super) fn collect(registry: &AppRegistry) -> Vec<RunningApp> {
     let mut by_key: HashMap<String, RunningApp> = HashMap::new();
-    window_source::collect_windows(registry, &mut by_key); // Source A
-    packaged_source::merge_packaged_apps(registry, &mut by_key); // Source B
+    // Source A — top-level windows.
+    window_source::collect_windows(&window_source::Win32WindowSource, registry, &mut by_key);
+    // Source B — running packaged apps.
+    packaged_source::merge_packaged_apps(&packaged_source::Win32PackagedSource, registry, &mut by_key);
     by_key.into_values().collect()
 }
 

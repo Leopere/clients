@@ -34,44 +34,90 @@ struct WindowHit {
     visible: bool,
 }
 
-pub(super) fn collect_windows(registry: &AppRegistry, by_key: &mut HashMap<String, RunningApp>) {
-    let mut hits: Vec<WindowHit> = Vec::new();
-    // SAFETY: `hits` outlives the enumeration; the callback only pushes into it.
-    unsafe {
-        let _ = EnumWindows(Some(enum_windows_proc), LPARAM(&mut hits as *mut Vec<WindowHit> as isize));
-    }
+/// One enumerated app window, resolved to plain data (no live handles). This is the seam
+/// between the FFI acquisition ([`Win32WindowSource`]) and the pure collection logic
+/// ([`collect_windows`]), which makes the identity/dedupe logic unit-testable.
+pub(super) struct RawWindow {
+    pid: u32,
+    exe_path: Option<PathBuf>,
+    name: String,
+    aumid: Option<String>,
+    /// Version-info product/description name, pre-read from `exe_path`.
+    product_name: Option<String>,
+    /// Currently shown on screen (visible and not cloaked).
+    visible: bool,
+}
 
+/// Source of enumerated app windows. Abstracts the Win32 enumeration + per-window resolution so
+/// tests can supply a fixed list of [`RawWindow`]s in place of a real desktop.
+#[cfg_attr(test, mockall::automock)]
+pub(super) trait WindowSource {
+    fn app_windows(&self) -> Vec<RawWindow>;
+}
+
+/// Production [`WindowSource`]: enumerates top-level windows with `EnumWindows`, classifies them,
+/// and resolves each to a [`RawWindow`] (pid/path/name/AUMID/product, following
+/// `ApplicationFrameHost` frames to the hosted child process). All the `unsafe` FFI lives here.
+pub(super) struct Win32WindowSource;
+
+impl WindowSource for Win32WindowSource {
+    fn app_windows(&self) -> Vec<RawWindow> {
+        let mut hits: Vec<WindowHit> = Vec::new();
+        // SAFETY: `hits` outlives the enumeration; the callback only pushes into it.
+        unsafe {
+            let _ =
+                EnumWindows(Some(enum_windows_proc), LPARAM(&mut hits as *mut Vec<WindowHit> as isize));
+        }
+
+        let mut out = Vec::with_capacity(hits.len());
+        for hit in &hits {
+            let mut pid = 0u32;
+            unsafe { GetWindowThreadProcessId(hit.hwnd, Some(&mut pid)) };
+            if pid == 0 {
+                continue;
+            }
+
+            let mut exe_path = process_image_path(pid);
+            let mut name = exe_path.as_deref().and_then(file_name_of).unwrap_or_default();
+
+            // Packaged/UWP apps: the frame window belongs to ApplicationFrameHost; the real
+            // app is a child window in a different process (e.g. ms-teams.exe, Netflix).
+            if name.eq_ignore_ascii_case("applicationframehost.exe") {
+                if let Some(child) = child_pid(hit.hwnd, pid) {
+                    pid = child;
+                    exe_path = process_image_path(pid);
+                    name = exe_path.as_deref().and_then(file_name_of).unwrap_or_default();
+                }
+            }
+
+            let aumid = window_aumid(hit.hwnd);
+            let product_name = exe_path.as_deref().and_then(read_product_name);
+
+            out.push(RawWindow { pid, exe_path, name, aumid, product_name, visible: hit.visible });
+        }
+        out
+    }
+}
+
+/// Fold the enumerated windows into `by_key`, deduped and identity-resolved. Pure over the data
+/// from `source` — no FFI — so the dedupe/identity/representative logic is unit-testable.
+pub(super) fn collect_windows<W: WindowSource>(
+    source: &W,
+    registry: &AppRegistry,
+    by_key: &mut HashMap<String, RunningApp>,
+) {
     // Keys whose representative pid already comes from a visible window. Collection-local: it
     // only guides which pid we keep, and is not needed once collection is done.
     let mut has_visible_representative: HashSet<String> = HashSet::new();
 
-    for hit in &hits {
-        let mut pid = 0u32;
-        unsafe { GetWindowThreadProcessId(hit.hwnd, Some(&mut pid)) };
-        if pid == 0 {
-            continue;
-        }
-
-        let mut exe_path = process_image_path(pid);
-        let mut name = exe_path.as_deref().and_then(file_name_of).unwrap_or_default();
-
-        // Packaged/UWP apps: the frame window belongs to ApplicationFrameHost; the real
-        // app is a child window in a different process (e.g. ms-teams.exe, Netflix).
-        if name.eq_ignore_ascii_case("applicationframehost.exe") {
-            if let Some(child) = child_pid(hit.hwnd, pid) {
-                pid = child;
-                exe_path = process_image_path(pid);
-                name = exe_path.as_deref().and_then(file_name_of).unwrap_or_default();
-            }
-        }
-
-        let aumid = window_aumid(hit.hwnd);
-        let (display_name, key, registered) = identity(aumid.as_deref(), &exe_path, &name, registry);
+    for w in source.app_windows() {
+        let (display_name, key, registered) =
+            identity(w.aumid.as_deref(), &w.exe_path, &w.name, w.product_name.as_deref(), registry);
 
         let entry = by_key.entry(key.clone()).or_insert_with(|| RunningApp {
-            pid,
-            name: name.clone(),
-            exe_path: exe_path.clone(),
+            pid: w.pid,
+            name: w.name.clone(),
+            exe_path: w.exe_path.clone(),
             display_name: display_name.clone(),
             has_window: true,
             registered,
@@ -79,9 +125,9 @@ pub(super) fn collect_windows(registry: &AppRegistry, by_key: &mut HashMap<Strin
 
         // Prefer a pid that owns a visible window as the representative. `insert` returns true
         // only for the first visible window seen for this key, so we upgrade at most once.
-        if hit.visible && has_visible_representative.insert(key) {
-            entry.pid = pid;
-            entry.exe_path = exe_path.clone();
+        if w.visible && has_visible_representative.insert(key) {
+            entry.pid = w.pid;
+            entry.exe_path = w.exe_path.clone();
         }
     }
 }
@@ -101,6 +147,7 @@ fn identity(
     aumid: Option<&str>,
     exe_path: &Option<PathBuf>,
     name: &str,
+    product_name: Option<&str>,
     registry: &AppRegistry,
 ) -> (Option<String>, String, bool) {
     if let Some(aumid) = aumid {
@@ -109,7 +156,7 @@ fn identity(
             return (Some(reg.display_name.clone()), format!("aumid:{key}"), true);
         }
     }
-    let product = exe_path.as_deref().and_then(read_product_name);
+    let product = product_name.map(str::to_owned);
     let key = product
         .clone()
         .or_else(|| exe_path.as_ref().map(|p| p.display().to_string()))
@@ -317,5 +364,131 @@ fn query_string(block: &[u8], sub_block: &str) -> Option<String> {
         let chars = std::slice::from_raw_parts(ptr.cast::<u16>(), len as usize);
         let s = String::from_utf16_lossy(chars);
         Some(s.trim_end_matches('\0').to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_data::running_apps::windows::AppRegistration;
+
+    fn registry(entries: &[(&str, &str)]) -> AppRegistry {
+        entries
+            .iter()
+            .map(|(aumid, name)| (aumid.to_string(), AppRegistration { display_name: name.to_string() }))
+            .collect()
+    }
+
+    fn raw(pid: u32, aumid: Option<&str>, name: &str, product: Option<&str>, visible: bool) -> RawWindow {
+        RawWindow {
+            pid,
+            exe_path: Some(PathBuf::from(format!("C:\\Apps\\{name}"))),
+            name: name.to_string(),
+            aumid: aumid.map(str::to_owned),
+            product_name: product.map(str::to_owned),
+            visible,
+        }
+    }
+
+    fn run_collect(source: MockWindowSource, reg: &AppRegistry) -> HashMap<String, RunningApp> {
+        let mut by_key = HashMap::new();
+        collect_windows(&source, reg, &mut by_key);
+        by_key
+    }
+
+    // --- identity (pure) ---
+
+    #[test]
+    fn identity_resolves_registered_aumid() {
+        let reg = registry(&[("netflix.app", "Netflix")]);
+        let (display, key, registered) = identity(
+            Some("Netflix.App"),
+            &Some(PathBuf::from("C:\\x\\app.exe")),
+            "app.exe",
+            Some("Some Product"),
+            &reg,
+        );
+        assert_eq!(display.as_deref(), Some("Netflix"));
+        assert_eq!(key, "aumid:netflix.app");
+        assert!(registered);
+    }
+
+    #[test]
+    fn identity_unregistered_uses_product_name_as_key() {
+        let reg = registry(&[]);
+        let (display, key, registered) = identity(
+            Some("unknown.aumid"),
+            &Some(PathBuf::from("C:\\x\\app.exe")),
+            "app.exe",
+            Some("Cool App"),
+            &reg,
+        );
+        assert_eq!(display.as_deref(), Some("Cool App"));
+        assert_eq!(key, "Cool App");
+        assert!(!registered);
+    }
+
+    #[test]
+    fn identity_falls_back_to_path_then_name() {
+        let reg = registry(&[]);
+        let (display, key, _) =
+            identity(None, &Some(PathBuf::from("C:\\x\\app.exe")), "app.exe", None, &reg);
+        assert_eq!(display, None);
+        assert_eq!(key, PathBuf::from("C:\\x\\app.exe").display().to_string());
+
+        let (_, key_name, _) = identity(None, &None, "app.exe", None, &reg);
+        assert_eq!(key_name, "app.exe");
+    }
+
+    // --- collect_windows (mocked source) ---
+
+    #[test]
+    fn collect_dedupes_windows_sharing_an_aumid_and_prefers_visible_pid() {
+        let reg = registry(&[("netflix.app", "Netflix")]);
+        let mut source = MockWindowSource::new();
+        source.expect_app_windows().once().returning(|| {
+            vec![
+                raw(10, Some("Netflix.App"), "msedge.exe", None, false),
+                raw(20, Some("Netflix.App"), "msedge.exe", None, true),
+            ]
+        });
+
+        let by_key = run_collect(source, &reg);
+        assert_eq!(by_key.len(), 1);
+        let app = by_key.get("aumid:netflix.app").expect("entry keyed by aumid");
+        assert_eq!(app.display_name.as_deref(), Some("Netflix"));
+        assert!(app.registered);
+        // Representative upgraded to the first visible window's pid.
+        assert_eq!(app.pid, 20);
+    }
+
+    #[test]
+    fn collect_keeps_first_visible_representative() {
+        let reg = registry(&[("a.app", "A")]);
+        let mut source = MockWindowSource::new();
+        source.expect_app_windows().once().returning(|| {
+            vec![
+                raw(10, Some("A.App"), "a.exe", None, true),
+                raw(20, Some("A.App"), "a.exe", None, true),
+            ]
+        });
+        let by_key = run_collect(source, &reg);
+        assert_eq!(by_key.get("aumid:a.app").expect("entry").pid, 10);
+    }
+
+    #[test]
+    fn collect_keeps_distinct_unregistered_apps_separate() {
+        let reg = registry(&[]);
+        let mut source = MockWindowSource::new();
+        source.expect_app_windows().once().returning(|| {
+            vec![
+                raw(10, None, "a.exe", Some("App A"), true),
+                raw(20, None, "b.exe", Some("App B"), true),
+            ]
+        });
+        let by_key = run_collect(source, &reg);
+        assert_eq!(by_key.len(), 2);
+        assert!(by_key.contains_key("App A"));
+        assert!(by_key.contains_key("App B"));
     }
 }
