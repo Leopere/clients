@@ -15,9 +15,8 @@ import { CollectionView } from "@bitwarden/common/admin-console/models/collectio
 import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
 import { ConfigService } from "@bitwarden/common/platform/abstractions/config/config.service";
 import { LogService } from "@bitwarden/common/platform/abstractions/log.service";
-import { SdkService, uuidAsString } from "@bitwarden/common/platform/abstractions/sdk/sdk.service";
+import { SdkService } from "@bitwarden/common/platform/abstractions/sdk/sdk.service";
 import { UserId } from "@bitwarden/common/types/guid";
-import { DecryptCollectionListResult } from "@bitwarden/sdk-internal";
 
 import {
   CollectionDecryptionResult,
@@ -116,10 +115,11 @@ export class DefaultCollectionEncryptionService implements CollectionEncryptionS
   }
 
   /**
-   * V2 implementation using the SDK's `decrypt_list_with_failures`, which parallelizes
-   * decryption of the whole list for better performance on large lists. Gated behind
-   * {@link FeatureFlag.CollectionBulkDecryptWithFailures} until the SDK bindings that expose
-   * this method have rolled out everywhere this service is used.
+   * V2 implementation using the SDK's `decrypt_list` for batch performance. Falls back to
+   * per-item decryption (V1 logic) when the batch call throws so that partially-corrupt
+   * vaults still surface individual failures rather than aborting everything. Gated behind
+   * {@link FeatureFlag.CollectionBulkDecryptWithFailures} until the SDK bindings have rolled
+   * out everywhere this service is used.
    */
   private decryptManyWithFailuresV2(
     collections: Collection[],
@@ -131,17 +131,32 @@ export class DefaultCollectionEncryptionService implements CollectionEncryptionS
       concatMap(async (sdk) => {
         using ref = sdk.take();
 
-        const collectionMap = this.buildCollectionMap(collections);
+        const sdkCollections = collections.map((c) => c.toSdkCollection());
+        const success: CollectionView[] = [];
+        const failure: Collection[] = [];
 
-        const result: DecryptCollectionListResult = ref.value
-          .vault()
-          .collections()
-          .decrypt_list_with_failures(collections.map((c) => c.toSdkCollection()));
+        try {
+          // Fast path: SDK decrypts the entire list in one call. Results are returned in
+          // the same order as the input, so index-based re-association is safe.
+          const sdkViews = ref.value.vault().collections().decrypt_list(sdkCollections);
+          for (let i = 0; i < sdkViews.length; i++) {
+            success.push(CollectionView.fromSdkCollectionView(sdkViews[i], collections[i]));
+          }
+        } catch {
+          // Batch call failed (e.g. one key is missing); fall back to per-item so that
+          // only the affected collections are reported as failures.
+          for (const collection of collections) {
+            try {
+              const sdkView = ref.value.vault().collections().decrypt(collection.toSdkCollection());
+              success.push(CollectionView.fromSdkCollectionView(sdkView, collection));
+            } catch (error) {
+              this.logService.error(`Failed to decrypt collection ${collection.id}: ${error}`);
+              failure.push(collection);
+            }
+          }
+        }
 
-        return {
-          success: this.mapDecryptedSuccesses(result.successes, collectionMap),
-          failure: this.mapDecryptedFailures(result.failures),
-        };
+        return { success, failure };
       }),
       catchError((error: unknown) => {
         this.logService.error(`Failed to decrypt collections in batch: ${error}`);
@@ -152,7 +167,7 @@ export class DefaultCollectionEncryptionService implements CollectionEncryptionS
           startTime,
           "Admin Console",
           "DefaultCollectionEncryptionService",
-          "decryptManyWithFailures (v2, decrypt_list_with_failures)",
+          "decryptManyWithFailures (v2, decrypt_list with per-item fallback)",
           [
             ["Items", collections.length],
             ["Successes", result.success.length],
@@ -161,43 +176,5 @@ export class DefaultCollectionEncryptionService implements CollectionEncryptionS
         );
       }),
     );
-  }
-
-  /**
-   * Builds a lookup of source `Collection`s by id, used to re-associate decrypted SDK views with
-   * their source (needed to preserve `defaultUserCollectionEmail`, which gates the security
-   * restriction in `CollectionView.canEditName()`). Duplicate ids collapse to the last entry,
-   * which is the same collection either way.
-   */
-  private buildCollectionMap(collections: Collection[]): Map<string, Collection> {
-    return new Map(collections.map((c) => [c.id, c]));
-  }
-
-  private mapDecryptedSuccesses(
-    sdkViews: DecryptCollectionListResult["successes"],
-    collectionMap: Map<string, Collection>,
-  ): CollectionView[] {
-    return sdkViews
-      .map((sdkView) => {
-        const original = sdkView.id ? collectionMap.get(uuidAsString(sdkView.id)) : undefined;
-        return original ? CollectionView.fromSdkCollectionView(sdkView, original) : undefined;
-      })
-      .filter((v): v is CollectionView => v !== undefined);
-  }
-
-  private mapDecryptedFailures(
-    sdkCollections: DecryptCollectionListResult["failures"],
-  ): Collection[] {
-    const failures = sdkCollections.map((sdkCollection) =>
-      Collection.fromSdkCollection(sdkCollection),
-    );
-
-    if (failures.length > 0) {
-      this.logService.error(
-        `Failed to decrypt ${failures.length} collection(s): ${failures.map((f) => f.id).join(", ")}`,
-      );
-    }
-
-    return failures;
   }
 }
