@@ -16,9 +16,21 @@ use std::path::PathBuf;
 
 use autotype::get_running_apps;
 
+/// Install a fmt subscriber that routes through cargo's test capture (so `--nocapture` shows it)
+/// and honors `RUST_LOG`. Modeled on `ssh_agent/tests/common.rs::init_tracing`, with an added
+/// `EnvFilter` — that version is fixed at INFO and ignores `RUST_LOG`, so the `debug!` filter
+/// events would never show. With this, `RUST_LOG=autotype=debug` surfaces them.
+fn init_tracing() {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_test_writer()
+        .try_init();
+}
+
 #[test]
 #[allow(clippy::print_stdout)] // print-only developer tool; not run in CI
 fn print_running_apps() {
+    init_tracing();
     let apps = get_running_apps().expect("get_running_apps should succeed on Windows");
 
     println!();

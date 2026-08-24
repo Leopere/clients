@@ -8,6 +8,7 @@ publish.workspace = true
 [target.'cfg(windows)'.dev-dependencies]
 mockall.workspace = true
 serial_test.workspace = true
+tracing-subscriber = { workspace = true }
 windows = { workspace = true, features = [
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_WindowsAndMessaging",
