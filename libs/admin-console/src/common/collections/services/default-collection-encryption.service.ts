@@ -79,10 +79,6 @@ export class DefaultCollectionEncryptionService implements CollectionEncryptionS
 
     return this.sdkService.userClient$(userId).pipe(
       concatMap(async (sdk) => {
-        if (!sdk) {
-          throw new Error("SDK not available");
-        }
-
         using ref = sdk.take();
 
         const success: CollectionView[] = [];
@@ -133,10 +129,6 @@ export class DefaultCollectionEncryptionService implements CollectionEncryptionS
 
     return this.sdkService.userClient$(userId).pipe(
       concatMap(async (sdk) => {
-        if (!sdk) {
-          throw new Error("SDK not available");
-        }
-
         using ref = sdk.take();
 
         const collectionMap = this.buildCollectionMap(collections);
