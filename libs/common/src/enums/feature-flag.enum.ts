@@ -125,6 +125,7 @@ export enum FeatureFlag {
 
   /* PAM */
   Pam = "pm-37044-pam-v-0",
+  PamRotation = "pm-39040-pam-rotation",
 
   /* VFO */
   VFO1Foundation = "vfo1-foundation",
@@ -255,6 +256,7 @@ export const DefaultFeatureFlagValue = {
 
   /* PAM */
   [FeatureFlag.Pam]: FALSE,
+  [FeatureFlag.PamRotation]: FALSE,
 
   /* VFO */
   [FeatureFlag.VFO1Foundation]: FALSE,
