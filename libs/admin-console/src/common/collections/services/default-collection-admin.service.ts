@@ -1,4 +1,5 @@
 import {
+  catchError,
   combineLatest,
   distinctUntilChanged,
   firstValueFrom,
@@ -34,7 +35,7 @@ import { CollectionId, OrganizationId, UserId } from "@bitwarden/common/types/gu
 import { OrgKey } from "@bitwarden/common/types/key";
 import { KeyService } from "@bitwarden/key-management";
 // eslint-disable-next-line no-restricted-imports
-import { DECRYPT_ERROR, EncryptService } from "@bitwarden/legacy-crypto";
+import { EncryptService } from "@bitwarden/legacy-crypto";
 
 import { CollectionAdminService, CollectionService } from "../abstractions";
 import { CollectionEncryptionService } from "../abstractions/collection-encryption.service";
@@ -167,9 +168,8 @@ export class DefaultCollectionAdminService implements CollectionAdminService {
   }
 
   /**
-   * V1 implementation: decrypts each collection's name individually via `EncryptService`, one at
-   * a time. A collection that fails to decrypt is shown with a placeholder name rather than
-   * being dropped, since admins still need to see, manage, and delete it.
+   * V1 implementation: decrypts all collection names concurrently via `EncryptService`.
+   * Collections that fail to decrypt are shown with a placeholder name rather than being dropped.
    */
   private decryptManyV1(
     organizationId: string,
@@ -202,16 +202,14 @@ export class DefaultCollectionAdminService implements CollectionAdminService {
 
     return forkJoin(decryptions).pipe(
       tap((views) => {
-        // `fromCollectionAccessDetails`/`fromCollectionResponse` never reject - a collection that
-        // fails to decrypt resolves with a `DECRYPT_ERROR` placeholder name instead, so every
-        // promise here resolves and `views.length` alone can't distinguish real successes from
-        // failures.
-        const failures = views.filter((v) => v.name === DECRYPT_ERROR).length;
+        // Decryption failures resolve with a DECRYPT_ERROR placeholder rather than rejecting,
+        // so failures must be counted via `decryptionFailed` rather than `views.length`.
+        const failures = views.filter((v) => v.decryptionFailed).length;
         this.logService.measure(
           startTime,
           "Admin Console",
           "DefaultCollectionAdminService",
-          "decryptMany (v1, one at a time)",
+          "decryptMany (v1, EncryptService per collection)",
           [
             ["Items", collections.length],
             ["Successes", views.length - failures],
@@ -223,15 +221,11 @@ export class DefaultCollectionAdminService implements CollectionAdminService {
   }
 
   /**
-   * V2 implementation: delegates decryption to `CollectionEncryptionService`, the single source
-   * of truth for `Collection -> CollectionView` decryption, then wraps the result back into
-   * `CollectionAdminView`s with the admin-only fields carried by the access-details response.
-   * This is a mapping layer only - it never calls the SDK directly. Gated behind
-   * {@link FeatureFlag.CollectionAdminBulkDecrypt} until this path has proven out in production.
+   * V2 implementation: delegates to `CollectionEncryptionService` and wraps results into
+   * `CollectionAdminView`s. Gated behind {@link FeatureFlag.CollectionAdminBulkDecrypt}.
    *
-   * Unlike the personal-vault decryption path, a collection that fails to decrypt is never
-   * silently dropped here: it's shown with a placeholder name so admins can still see, manage,
-   * and delete it from the Admin Console.
+   * Both per-collection and batch-level failures are caught and rendered as placeholder views
+   * so admins can still see and manage collections that failed to decrypt.
    */
   private decryptManyV2(
     collections: CollectionAccessDetailsResponse[],
@@ -265,6 +259,14 @@ export class DefaultCollectionAdminService implements CollectionAdminService {
           );
         }),
         map(({ successes, failures }) => [...successes, ...failures]),
+        catchError((e: unknown) => {
+          this.logService.error("[DefaultCollectionAdminService] Batch decryption failed", e);
+          return of(
+            collections.map((c) =>
+              CollectionAdminView.fromCollectionAccessDetailsDecryptionFailure(c),
+            ),
+          );
+        }),
       );
   }
 

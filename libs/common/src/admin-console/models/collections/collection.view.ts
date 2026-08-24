@@ -1,7 +1,7 @@
 import { Jsonify } from "type-fest";
 
 // eslint-disable-next-line no-restricted-imports
-import { EncryptService, EncString } from "@bitwarden/legacy-crypto";
+import { DECRYPT_ERROR, EncryptService, EncString } from "@bitwarden/legacy-crypto";
 import { CollectionView as SdkCollectionView } from "@bitwarden/sdk-internal";
 
 import { View } from "../../../models/view/view";
@@ -42,6 +42,11 @@ export class CollectionView implements View, ITreeNodeObject {
 
   get name(): string {
     return this.defaultUserCollectionEmail ?? this._name;
+  }
+
+  /** True if this collection's name failed to decrypt. */
+  get decryptionFailed(): boolean {
+    return this._name === DECRYPT_ERROR;
   }
 
   canEditItems(org: Organization): boolean {
