@@ -155,6 +155,7 @@ const FORK_IDENTITY_MESSAGE_KEYS = Object.freeze([
   "updateInBitwarden",
   "updateInBitwardenSlideDesc",
   "updateInBitwardenSlideImgAltPeriod",
+  "updateMasterPasswordWarning",
   "uriMatchDefaultStrategyHint",
   "wasmNotSupported",
   "weakMasterPasswordDesc",
@@ -162,8 +163,41 @@ const FORK_IDENTITY_MESSAGE_KEYS = Object.freeze([
   "welcomeDialogGraphicAlt",
 ]);
 
+const UPSTREAM_IDENTITY_MESSAGE_VARIANTS = Object.freeze([
+  "bitwarden",
+  "bitwaden",
+  "bitwaren",
+  "bidwarden",
+  "bitwardna",
+  "bitwardnov",
+  "битуорден",
+  "битоурден",
+  "битуордун",
+  "बिटवार्डन",
+  "बिटवर्डन",
+  "बिटवॉर्डेन",
+  "ಬಿಟ್ವಾರ್ಡೆನ್",
+  "ಬಿಟ್‌ವಾರ್ಡನ್",
+  "ಬಿಟ್ವರ್ಡ್ನಲ್ಲಿ",
+  "ಬಿಟ್‌ವಾರ್ಡೆನ್",
+  "ಬಿಟ್ವರ್ಡ್",
+  "ಬಿಟ್ವಾರ್ಡ್",
+  "ബിറ്റ്‌വർ‌ഡൻ‌",
+  "ബിറ്റ്വാർഡനിൽ",
+  "බිට්වාඩන්",
+  "බිට්වොන්",
+  "බිට්වර්ඩන්",
+]);
+
 function fail(message) {
   throw new Error(`Invalid Firefox fork identity: ${message}`);
+}
+
+function containsUpstreamIdentity(message) {
+  const normalizedMessage = message.normalize("NFKC").toLocaleLowerCase();
+  return UPSTREAM_IDENTITY_MESSAGE_VARIANTS.some((variant) =>
+    normalizedMessage.includes(variant.normalize("NFKC")),
+  );
 }
 
 function readRequiredString(config, property) {
@@ -495,6 +529,7 @@ module.exports = {
   OFFICIAL_FIREFOX_GECKO_ID,
   REQUIRED_ICON_FILES,
   applyToManifest,
+  containsUpstreamIdentity,
   load,
   transformLocale,
 };

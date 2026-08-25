@@ -12,6 +12,7 @@ import {
   FORK_IDENTITY_MESSAGE_KEYS,
   OFFICIAL_FIREFOX_GECKO_ID,
   REQUIRED_ICON_FILES,
+  containsUpstreamIdentity,
   load,
   transformLocale,
 } from "./firefox-fork-identity";
@@ -208,6 +209,20 @@ describe("Firefox fork identity", () => {
     );
   });
 
+  it.each([
+    "Bitwarden",
+    "Ứng dụng Bitwaden",
+    "Bidwarden",
+    "Битуорден",
+    "बिटवर्डन",
+    "ಬಿಟ್‌ವಾರ್ಡನ್",
+    "ബിറ്റ്വാർഡനിൽ",
+    "බිට්වර්ඩන්",
+  ])("detects the upstream identity variant %s", (message) => {
+    expect(containsUpstreamIdentity(message)).toBe(true);
+    expect(containsUpstreamIdentity("Vaultwarden Companion")).toBe(false);
+  });
+
   it("rejects unsupported release policy", () => {
     expect(() =>
       load(writeIdentity({ defaultServer: "cloud" as "self-hosted" }), "firefox", browserDirectory),
@@ -318,43 +333,47 @@ describe("Firefox fork identity", () => {
     expect(() => verify(buildDirectory)).toThrow("must use a non-official Gecko ID");
   });
 
-  it.each(["en", "fr", "bg"])("replaces fork identity messages in the %s locale", (locale) => {
-    const identity = load(writeIdentity(), "firefox", browserDirectory);
-    const source = fs.readFileSync(
-      path.join(browserDirectory, "src/_locales", locale, "messages.json"),
-    );
-    const original = JSON.parse(source.toString()) as LocaleMessages;
+  it.each(["en", "fr", "bg", "vi"])(
+    "replaces fork identity messages in the %s locale",
+    (locale) => {
+      const identity = load(writeIdentity(), "firefox", browserDirectory);
+      const source = fs.readFileSync(
+        path.join(browserDirectory, "src/_locales", locale, "messages.json"),
+      );
+      const original = JSON.parse(source.toString()) as LocaleMessages;
 
-    const built = JSON.parse(transformLocale(identity)(source)) as LocaleMessages;
-    const builtEnglish = JSON.parse(
-      transformLocale(identity)(
-        fs.readFileSync(path.join(browserDirectory, "src/_locales/en/messages.json")),
-      ),
-    ) as LocaleMessages;
+      const built = JSON.parse(transformLocale(identity)(source)) as LocaleMessages;
+      const builtEnglish = JSON.parse(
+        transformLocale(identity)(
+          fs.readFileSync(path.join(browserDirectory, "src/_locales/en/messages.json")),
+        ),
+      ) as LocaleMessages;
 
-    expect(built.appName.message).toBe(identity.name);
-    expect(built.appLogoLabel.message).toBe(identity.logoLabel);
-    expect(built.extName.message).toBe(identity.name);
-    expect(built.extDesc.message).toBe(identity.description);
-    expect(built.newToBitwarden.message).toBe("Need an account?");
-    expect(built.aboutBitwarden.message).toBe(`About ${identity.name}`);
-    expect(built.moreFromBitwarden.message).toBe("More resources");
-    expect(built.bitWebVaultApp.message).toBe("Account server web app");
-    expect(built.continueToWebAppDesc.message).toBe(
-      "Open more account features on your selected server's web app.",
-    );
-    expect(built.downloadDiagnosticReportWith.message).toBe(
-      "Download the diagnostic report before sharing it with your server administrator or support provider.",
-    );
-    expect(built.awaitDesktopDesc.message).toContain("compatible desktop app");
-    expect(FORK_IDENTITY_MESSAGE_KEYS).toHaveLength(125);
-    for (const key of FORK_IDENTITY_MESSAGE_KEYS) {
-      expect(built[key].message).toBe(builtEnglish[key].message);
-    }
-    expect(built.introCarouselLabel.message).toBe(`Welcome to ${identity.name}`);
-    expect(built.totpHelper.message).toContain(identity.name);
-    expect(built.introCarouselLabel.message).not.toContain("Битуорден");
-    expect(Object.values(built).some((value) => /bitwarden/i.test(value.message))).toBe(false);
-    expect(built.addItem).toEqual(original.addItem);
-  });
+      expect(built.appName.message).toBe(identity.name);
+      expect(built.appLogoLabel.message).toBe(identity.logoLabel);
+      expect(built.extName.message).toBe(identity.name);
+      expect(built.extDesc.message).toBe(identity.description);
+      expect(built.newToBitwarden.message).toBe("Need an account?");
+      expect(built.aboutBitwarden.message).toBe(`About ${identity.name}`);
+      expect(built.moreFromBitwarden.message).toBe("More resources");
+      expect(built.bitWebVaultApp.message).toBe("Account server web app");
+      expect(built.continueToWebAppDesc.message).toBe(
+        "Open more account features on your selected server's web app.",
+      );
+      expect(built.downloadDiagnosticReportWith.message).toBe(
+        "Download the diagnostic report before sharing it with your server administrator or support provider.",
+      );
+      expect(built.awaitDesktopDesc.message).toContain("compatible desktop app");
+      expect(FORK_IDENTITY_MESSAGE_KEYS).toHaveLength(126);
+      for (const key of FORK_IDENTITY_MESSAGE_KEYS) {
+        expect(built[key].message).toBe(builtEnglish[key].message);
+      }
+      expect(built.introCarouselLabel.message).toBe(`Welcome to ${identity.name}`);
+      expect(built.totpHelper.message).toContain(identity.name);
+      expect(built.introCarouselLabel.message).not.toContain("Битуорден");
+      expect(built.updateMasterPasswordWarning.message).not.toContain("Bitwaden");
+      expect(Object.values(built).some((value) => /bitwarden/i.test(value.message))).toBe(false);
+      expect(built.addItem).toEqual(original.addItem);
+    },
+  );
 });

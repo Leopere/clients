@@ -62,7 +62,7 @@ Fork provenance checks block commercial-only inputs before packaging:
 - no upstream wordmark, store badge, QR code, screenshot, carousel, health-tab, Safari, or browser
   icon image in the emitted XPI,
 - no Bitwarden shield glyph in the emitted icon fonts,
-- no user-visible Bitwarden identity in any of the 63 packaged locale message sets. The 125
+- no user-visible Bitwarden identity in any of the 63 packaged locale message sets. The 126
   messages that carry upstream identity in at least one source locale use reviewed neutral English
   wording until independent fork translations are available.
 

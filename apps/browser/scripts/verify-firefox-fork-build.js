@@ -7,6 +7,7 @@ const {
   FORK_IDENTITY_MESSAGE_KEYS,
   OFFICIAL_FIREFOX_GECKO_ID,
   REQUIRED_ICON_FILES,
+  containsUpstreamIdentity,
 } = require("../webpack/firefox-fork-identity");
 
 function fail(message) {
@@ -133,7 +134,7 @@ function verify(buildDirectory, expectedManifestVersion) {
       }
     }
     for (const [key, value] of Object.entries(messages)) {
-      if (typeof value?.message === "string" && /bitwarden/i.test(value.message)) {
+      if (typeof value?.message === "string" && containsUpstreamIdentity(value.message)) {
         fail(`locale "${locale}" retains upstream identity in message "${key}".`);
       }
     }
