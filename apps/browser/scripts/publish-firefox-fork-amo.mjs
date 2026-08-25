@@ -197,6 +197,7 @@ async function main() {
   const unsignedPackagePath = path.join(temporaryRoot, releaseManifest.package.file);
   const sourceArchivePath = path.join(temporaryRoot, releaseManifest.source.file);
   const unsignedSourceDirectory = path.join(temporaryRoot, "unsigned");
+  const signingSourceDirectory = path.join(temporaryRoot, "signing");
   const signedPayloadDirectory = path.join(temporaryRoot, "signed");
 
   try {
@@ -210,6 +211,8 @@ async function main() {
     }
     await mkdir(unsignedSourceDirectory, { recursive: true });
     run("unzip", ["-q", unsignedPackagePath, "-d", unsignedSourceDirectory], { stdio: "pipe" });
+    await mkdir(signingSourceDirectory, { recursive: true });
+    run("unzip", ["-q", unsignedPackagePath, "-d", signingSourceDirectory], { stdio: "pipe" });
     requireCleanRevision(initialCommit);
 
     await rm(signedDirectory, { recursive: true, force: true });
@@ -226,7 +229,7 @@ async function main() {
         `--channel=${releaseManifest.channel}`,
         "--no-input",
         "--approval-timeout=900000",
-        `--source-dir=${unsignedSourceDirectory}`,
+        `--source-dir=${signingSourceDirectory}`,
         `--artifacts-dir=${signedDirectory}`,
         `--upload-source-code=${sourceArchivePath}`,
       ],

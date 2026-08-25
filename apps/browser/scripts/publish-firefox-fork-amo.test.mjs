@@ -118,3 +118,12 @@ test("amo-auth uses secure Keychain prompts with a fixed contract", async () => 
   assert.doesNotMatch(addCommand[0], /(^|\s)-A(\s|$)/);
   assert.match(addCommand[0], /\n\s+-w\n$/);
 });
+
+test("publisher keeps web-ext state out of the pristine payload comparison", async () => {
+  const script = await readFile(new URL("./publish-firefox-fork-amo.mjs", import.meta.url), "utf8");
+
+  assert.match(script, /const unsignedSourceDirectory = path\.join\(temporaryRoot, "unsigned"\)/);
+  assert.match(script, /const signingSourceDirectory = path\.join\(temporaryRoot, "signing"\)/);
+  assert.match(script, /`--source-dir=\$\{signingSourceDirectory\}`/);
+  assert.match(script, /verifySignedPayload\(unsignedSourceDirectory, signedPayloadDirectory\)/);
+});
