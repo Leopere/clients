@@ -5,10 +5,12 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const browserDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const scriptPath = fileURLToPath(import.meta.url);
+const browserDirectory = path.resolve(path.dirname(scriptPath), "..");
 const repositoryDirectory = path.resolve(browserDirectory, "../..");
 const releaseDirectory = path.join(browserDirectory, "dist/release");
 const signedDirectory = path.join(browserDirectory, "dist/signed");
+const keychainService = "us.nixc.amo-publisher";
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -26,11 +28,8 @@ function run(command, args, options = {}) {
   return result.stdout?.trim() ?? "";
 }
 
-function readCredential(name) {
-  if (process.env[name]) {
-    return process.env[name];
-  }
-  const result = spawnSync("tmux", ["show-environment", "-g", name], {
+function readTmuxCredential(name, spawn) {
+  const result = spawn("tmux", ["show-environment", "-g", name], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
   });
@@ -41,6 +40,56 @@ function readCredential(name) {
   return result.stdout.startsWith(prefix)
     ? result.stdout.slice(prefix.length).trimEnd()
     : undefined;
+}
+
+function readKeychainCredential(name, spawn) {
+  const result = spawn(
+    "/usr/bin/security",
+    ["find-generic-password", "-s", keychainService, "-a", name, "-w"],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    },
+  );
+  return result.status === 0 ? result.stdout?.trimEnd() || undefined : undefined;
+}
+
+export function readCredentials({
+  env = process.env,
+  platform = process.platform,
+  spawn = spawnSync,
+} = {}) {
+  if (env.WEB_EXT_API_KEY && env.WEB_EXT_API_SECRET) {
+    return {
+      apiKey: env.WEB_EXT_API_KEY,
+      apiSecret: env.WEB_EXT_API_SECRET,
+      source: "process environment",
+    };
+  }
+
+  const tmuxApiKey = readTmuxCredential("WEB_EXT_API_KEY", spawn);
+  const tmuxApiSecret = readTmuxCredential("WEB_EXT_API_SECRET", spawn);
+  if (tmuxApiKey && tmuxApiSecret) {
+    return {
+      apiKey: tmuxApiKey,
+      apiSecret: tmuxApiSecret,
+      source: "tmux environment",
+    };
+  }
+
+  if (platform === "darwin") {
+    const keychainApiKey = readKeychainCredential("WEB_EXT_API_KEY", spawn);
+    const keychainApiSecret = readKeychainCredential("WEB_EXT_API_SECRET", spawn);
+    if (keychainApiKey && keychainApiSecret) {
+      return {
+        apiKey: keychainApiKey,
+        apiSecret: keychainApiSecret,
+        source: "macOS Keychain",
+      };
+    }
+  }
+
+  return {};
 }
 
 async function sha256(filePath) {
@@ -115,10 +164,11 @@ async function main() {
     throw new Error("Set PUBLISH_AMO=YES for an explicitly authorized AMO signing submission.");
   }
   const initialCommit = requireCleanRevision();
-  const apiKey = readCredential("WEB_EXT_API_KEY");
-  const apiSecret = readCredential("WEB_EXT_API_SECRET");
+  const { apiKey, apiSecret } = readCredentials();
   if (!apiKey || !apiSecret) {
-    throw new Error("AMO credentials are not loaded. Run scripts/amo-auth.zsh from tab-shepherd.");
+    throw new Error(
+      "AMO credentials are unavailable. Run npm --workspace @bitwarden/browser run auth:amo:fork:firefox to store them in macOS Keychain.",
+    );
   }
 
   run("node", ["scripts/release-check-firefox-fork.mjs"]);
@@ -221,4 +271,6 @@ async function main() {
   }
 }
 
-await main();
+if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
+  await main();
+}

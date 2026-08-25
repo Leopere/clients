@@ -33,6 +33,7 @@
     "dist:edge": "npm run build:prod:edge && mkdir -p dist && ./scripts/compress.sh dist-edge.zip",
     "dist:firefox": "cross-env MANIFEST_VERSION=2 npm run build:prod:firefox && mkdir -p dist && ./scripts/compress.sh dist-firefox.zip",
     "dist:fork:firefox": "npm run build:fork:prod:firefox && ./scripts/package-firefox-fork.sh fork-dist-firefox.zip 2",
+    "auth:amo:fork:firefox": "./scripts/amo-auth.zsh",
     "release:check:fork:firefox": "node ./scripts/release-check-firefox-fork.mjs",
     "publish:amo:fork:firefox": "node ./scripts/publish-firefox-fork-amo.mjs",
     "dist:opera": "npm run build:prod:opera && mkdir -p dist && ./scripts/compress.sh dist-opera.zip",

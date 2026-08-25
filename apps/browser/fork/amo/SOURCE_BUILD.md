@@ -21,11 +21,14 @@ identity validation, production build, lint, and package validation in one seque
 run separate prechecks for those cases when using this command.
 
 Use `release:check:fork:firefox` to build and validate a local package. For an authorized
-unlisted signing upload, run
+unlisted signing upload on macOS, store or replace the credentials with
+`npm --workspace @bitwarden/browser run auth:amo:fork:firefox` or
+`npm --workspace @bitwarden/browser run auth:amo:fork:firefox -- --replace`. Then run
 `PUBLISH_AMO=YES npm --workspace @bitwarden/browser run publish:amo:fork:firefox`. The command reads
-`WEB_EXT_API_KEY` and `WEB_EXT_API_SECRET` from the process or tmux environment and requires a clean,
-matching release bundle. After AMO returns the package, the script requires exactly one signed XPI,
-checks its signature and byte-equivalent payload, and then writes the submission receipt.
+`WEB_EXT_API_KEY` and `WEB_EXT_API_SECRET` from the process environment, tmux environment, or the
+`us.nixc.amo-publisher` macOS Keychain service. It requires a clean, matching release bundle. After
+AMO returns the package, the script requires exactly one signed XPI, checks its signature and
+byte-equivalent payload, and then writes the submission receipt.
 
 Set `SOURCE_DATE_EPOCH` to override ZIP timestamps. When it is absent, an original Git checkout uses
 the current commit timestamp. The attached source archive uses the commit and timestamp recorded in

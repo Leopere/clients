@@ -51,6 +51,7 @@ This fork is for the Bitwarden Firefox extension only.
   - `npm --workspace @bitwarden/browser run dist:fork:firefox`
   - `npm --workspace @bitwarden/browser run dist:fork:firefox:mv3` (evaluation only)
   - `npm --workspace @bitwarden/browser run release:check:fork:firefox`
+  - `npm --workspace @bitwarden/browser run auth:amo:fork:firefox` (macOS Keychain setup)
   - `PUBLISH_AMO=YES npm --workspace @bitwarden/browser run publish:amo:fork:firefox`
 - `dist:firefox` remains the upstream-equivalent path. It ignores fork identity environment variables.
 - Fork builds use the dedicated `build-fork-firefox` output directory. The MV2 and MV3 commands set their manifest versions explicitly.
@@ -75,8 +76,9 @@ This fork is for the Bitwarden Firefox extension only.
 - Do not add `update_url`.
 - The fork output explicitly excludes upstream `logo-dark@2x.png` and `logo-white@2x.png` wordmark PNGs from Firefox packaged artifacts.
 - The AMO publisher uses Mozilla's unlisted self-distribution channel. It runs the full release gate,
-  loads guarded AMO credentials from the environment or tmux server memory, uploads the matching
-  human-readable source archive, and stores the signed XPI and non-secret receipt in `dist/signed/`.
+  loads guarded AMO credentials from the environment, tmux server memory, or macOS Keychain,
+  uploads the matching human-readable source archive, and stores the signed XPI and non-secret
+  receipt in `dist/signed/`.
 - For deterministic package output:
   - use `SOURCE_DATE_EPOCH` when present,
   - otherwise fall back to the current Git commit timestamp,
