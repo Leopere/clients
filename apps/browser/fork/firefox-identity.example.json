@@ -1,0 +1,14 @@
+{
+  "name": "REPLACE_ME",
+  "shortName": "REPLACE_ME",
+  "description": "REPLACE_ME",
+  "author": "REPLACE_ME",
+  "homepageUrl": "https://replace-me.invalid",
+  "geckoId": "replace-me@example.invalid",
+  "logoLabel": "REPLACE_ME",
+  "defaultServer": "self-hosted",
+  "openWelcomePage": false,
+  "slug": "replace-me",
+  "distributionChannel": "unlisted",
+  "iconsDirectory": "./icons"
+}

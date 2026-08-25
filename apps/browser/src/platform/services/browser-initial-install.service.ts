@@ -40,6 +40,10 @@ export default class BrowserInitialInstallService {
    * install type supports it.
    */
   async displayWelcomePage() {
+    if (process.env.FIREFOX_FORK_OPEN_WELCOME_PAGE === "false") {
+      return;
+    }
+
     // We use the install type here because it is available at install time, versus
     // specific MDM-delivered settings, which are eventually consistent on extension load.
     const installType = await BrowserApi.getInstallType();

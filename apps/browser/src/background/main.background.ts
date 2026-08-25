@@ -1802,7 +1802,7 @@ export default class MainBackground {
     );
 
     this.badgeService = new BadgeService(
-      new DefaultBadgeBrowserApi(this.platformUtilsService),
+      new DefaultBadgeBrowserApi(this.platformUtilsService, this.i18nService),
       this.logService,
     );
     this.authStatusBadgeUpdaterService = new AuthStatusBadgeUpdaterService(

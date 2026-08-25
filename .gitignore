@@ -29,6 +29,7 @@ npm-debug.log
 # Build directories
 dist
 build
+/apps/browser/build-fork-firefox
 target
 .angular/cache
 .flatpak

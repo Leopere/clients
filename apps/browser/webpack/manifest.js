@@ -20,11 +20,15 @@
  *
  * for Chrome.
  */
-function transform(browser) {
+function transform(browser, forkIdentity) {
   return (buffer) => {
     let manifest = JSON.parse(buffer.toString());
 
     manifest = transformPrefixes(manifest, browser);
+    if (forkIdentity != null) {
+      const { applyToManifest } = require("./firefox-fork-identity");
+      manifest = applyToManifest(manifest, forkIdentity);
+    }
 
     return JSON.stringify(manifest, null, 2);
   };
@@ -69,4 +73,5 @@ function transformPrefixes(manifest, browser) {
 
 module.exports = {
   transform,
+  transformPrefixes,
 };

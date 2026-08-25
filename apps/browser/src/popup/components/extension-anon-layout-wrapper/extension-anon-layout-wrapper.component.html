@@ -6,7 +6,13 @@
     [pageTitle]="''"
   >
     <div class="tw-w-32">
-      <bit-svg *ngIf="showLogo" [content]="logo" [ariaLabel]="'appLogoLabel' | i18n"></bit-svg>
+      @if (showLogo && logo) {
+        <bit-svg [content]="logo" [ariaLabel]="'appLogoLabel' | i18n"></bit-svg>
+      } @else if (showLogo) {
+        <span class="tw-text-main tw-text-lg tw-font-semibold">
+          {{ "appName" | i18n }}
+        </span>
+      }
     </div>
 
     <ng-container slot="end">

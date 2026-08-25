@@ -1,0 +1,14 @@
+{
+  "name": "Vaultwarden Companion",
+  "shortName": "VW Companion",
+  "description": "An unofficial Firefox password manager client for self-hosted Vaultwarden servers.",
+  "author": "ColinKnapp.com",
+  "homepageUrl": "https://colinknapp.com/",
+  "geckoId": "vaultwarden-companion@extensions.colinknapp.com",
+  "logoLabel": "Vaultwarden Companion vault door",
+  "defaultServer": "self-hosted",
+  "openWelcomePage": false,
+  "slug": "vaultwarden-companion",
+  "distributionChannel": "unlisted",
+  "iconsDirectory": "./icons"
+}

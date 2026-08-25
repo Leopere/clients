@@ -28,6 +28,8 @@ export class AboutDialogComponent {
   @ViewChild("version") protected version!: ElementRef;
 
   protected year = new Date().getFullYear();
+  protected isFirefoxFork = process.env.FIREFOX_FORK_BUILD === "true";
+  protected forkAuthor = process.env.FIREFOX_FORK_AUTHOR;
   protected version$: Observable<string>;
 
   protected data$ = combineLatest([

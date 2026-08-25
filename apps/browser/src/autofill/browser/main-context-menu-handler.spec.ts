@@ -13,6 +13,7 @@ import {
   COPY_USERNAME_ID,
   COPY_VERIFICATION_CODE_ID,
   NOOP_COMMAND_SUFFIX,
+  ROOT_ID,
   SEPARATOR_ID,
 } from "@bitwarden/common/autofill/constants";
 import { AutofillSettingsServiceAbstraction } from "@bitwarden/common/autofill/services/autofill-settings.service";
@@ -170,6 +171,10 @@ describe("context-menu", () => {
       const createdMenu = await sut.init();
       expect(createdMenu).toBeTruthy();
       expect(createSpy).toHaveBeenCalledTimes(10);
+      expect(createSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: ROOT_ID, title: "appName" }),
+        expect.any(Function),
+      );
     });
 
     it("has menu enabled and has premium", async () => {

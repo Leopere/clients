@@ -48,7 +48,7 @@ export class MainContextMenuHandler {
     return [
       {
         id: ROOT_ID,
-        title: "Bitwarden",
+        title: this.i18nService.t("appName"),
       },
       {
         id: AUTOFILL_ID,

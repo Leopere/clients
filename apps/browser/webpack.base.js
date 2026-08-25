@@ -7,6 +7,8 @@ const { AngularWebpackPlugin } = require("@ngtools/webpack");
 const TerserPlugin = require("terser-webpack-plugin");
 const { TsconfigPathsPlugin } = require("tsconfig-paths-webpack-plugin");
 const configurator = require("./config/config");
+const { FirefoxForkHtmlIdentityPlugin } = require("./webpack/firefox-fork-html-identity-plugin");
+const firefoxForkIdentity = require("./webpack/firefox-fork-identity");
 const manifest = require("./webpack/manifest");
 const AngularCheckPlugin = require("./webpack/angular-check");
 
@@ -48,6 +50,17 @@ module.exports.buildConfig = function buildConfig(params) {
   }
 
   const { ENV, manifestVersion, browser } = module.exports.getEnv(params);
+  const forkBuild = process.env.FIREFOX_FORK_BUILD === "1";
+  const forkIdentity = forkBuild
+    ? firefoxForkIdentity.load(
+        process.env.FIREFOX_FORK_IDENTITY ?? "fork/firefox-identity.json",
+        browser,
+        __dirname,
+      )
+    : undefined;
+  if (forkBuild) {
+    params.outputPath = path.resolve(__dirname, "build-fork-firefox");
+  }
 
   console.log(`Building Manifest Version ${manifestVersion} app - ${params.configName} version`);
 
@@ -141,6 +154,12 @@ module.exports.buildConfig = function buildConfig(params) {
         BW_DETECT_SYNC_BOUNDARIES: JSON.stringify(
           process.env.BW_DETECT_SYNC_BOUNDARIES === "true" || ENV === "development",
         ),
+        FIREFOX_FORK_AUTHOR: JSON.stringify(forkIdentity?.author ?? ""),
+        FIREFOX_FORK_BUILD: JSON.stringify(forkBuild ? "true" : "false"),
+        FIREFOX_FORK_DEFAULT_SERVER: JSON.stringify(forkIdentity?.defaultServer ?? ""),
+        FIREFOX_FORK_OPEN_WELCOME_PAGE: JSON.stringify(
+          forkIdentity == null || forkIdentity.openWelcomePage ? "true" : "false",
+        ),
       },
     }),
     new webpack.EnvironmentPlugin({
@@ -148,6 +167,25 @@ module.exports.buildConfig = function buildConfig(params) {
       DEV_FLAGS: ENV === "development" ? envConfig.devFlags : {},
     }),
   ];
+
+  const browserImagesPattern = {
+    from: path.resolve(__dirname, "src/images"),
+    to: "images",
+    ...(forkIdentity == null
+      ? {}
+      : {
+          globOptions: {
+            ignore: firefoxForkIdentity.REQUIRED_ICON_FILES.map((fileName) => `**/${fileName}`),
+          },
+        }),
+  };
+  const forkIconPatterns =
+    forkIdentity == null
+      ? []
+      : firefoxForkIdentity.REQUIRED_ICON_FILES.map((fileName) => ({
+          from: path.join(forkIdentity.iconsDirectory, fileName),
+          to: `images/${fileName}`,
+        }));
 
   const plugins = [
     new HtmlWebpackPlugin({
@@ -190,11 +228,18 @@ module.exports.buildConfig = function buildConfig(params) {
               ? path.resolve(__dirname, "src/manifest.v3.json")
               : path.resolve(__dirname, "src/manifest.json"),
           to: "manifest.json",
-          transform: manifest.transform(browser),
+          transform: manifest.transform(browser, forkIdentity),
         },
         { from: path.resolve(__dirname, "src/managed_schema.json"), to: "managed_schema.json" },
-        { from: path.resolve(__dirname, "src/_locales"), to: "_locales" },
-        { from: path.resolve(__dirname, "src/images"), to: "images" },
+        {
+          from: path.resolve(__dirname, "src/_locales"),
+          to: "_locales",
+          ...(forkIdentity == null
+            ? {}
+            : { transform: firefoxForkIdentity.transformLocale(forkIdentity) }),
+        },
+        browserImagesPattern,
+        ...forkIconPatterns,
         { from: path.resolve(__dirname, "src/popup/images"), to: "popup/images" },
         { from: path.resolve(__dirname, "src/autofill/content/autofill.css"), to: "content" },
       ],
@@ -213,6 +258,16 @@ module.exports.buildConfig = function buildConfig(params) {
     }),
     ...requiredPlugins,
   ];
+
+  if (forkIdentity != null) {
+    plugins.push(new FirefoxForkHtmlIdentityPlugin(forkIdentity.name));
+    plugins.push(
+      new webpack.NormalModuleReplacementPlugin(
+        /bitwarden-logo\.icon(?:\.ts)?$/,
+        path.resolve(__dirname, "webpack/firefox-fork-empty-logo.js"),
+      ),
+    );
+  }
 
   /**
    * @type {import("webpack").Configuration}

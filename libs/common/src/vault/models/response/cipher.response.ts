@@ -134,6 +134,8 @@ export class CipherResponse extends BaseResponse {
 
     this.reprompt = this.getResponseProperty("Reprompt") || CipherRepromptType.None;
     this.key = this.getResponseProperty("Key") || null;
-    this.data = this.getResponseProperty("Data");
+    const data = this.getResponseProperty("Data");
+    // Vaultwarden before 1.37 used Data for a legacy object. Blob-encrypted Data is a string.
+    this.data = typeof data === "string" ? data : undefined;
   }
 }

@@ -1,7 +1,8 @@
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 
 import { JslibModule } from "@bitwarden/angular/jslib.module";
+import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { ButtonModule, LinkModule } from "@bitwarden/components";
 
 // FIXME(https://bitwarden.atlassian.net/browse/CL-764): Migrate to OnPush
@@ -12,4 +13,9 @@ import { ButtonModule, LinkModule } from "@bitwarden/components";
   templateUrl: "protected-by-component.html",
   imports: [CommonModule, CommonModule, JslibModule, ButtonModule, LinkModule],
 })
-export class ProtectedByComponent {}
+export class ProtectedByComponent {
+  private readonly i18nService = inject(I18nService);
+  protected readonly phishingBlockerName = `${this.i18nService.t("appName")} ${this.i18nService.t(
+    "phishingBlocker",
+  )}`;
+}

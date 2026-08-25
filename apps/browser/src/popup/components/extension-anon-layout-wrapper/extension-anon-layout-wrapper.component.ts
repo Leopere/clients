@@ -74,7 +74,7 @@ export class ExtensionAnonLayoutWrapperComponent implements OnInit, OnDestroy {
   protected secondaryContentLocation?: SecondaryContentLocationType;
 
   protected theme: string;
-  protected logo = BitwardenLogo;
+  protected logo = process.env.FIREFOX_FORK_BUILD === "true" ? undefined : BitwardenLogo;
 
   constructor(
     private router: Router,

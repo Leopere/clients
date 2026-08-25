@@ -77,7 +77,7 @@ export class DefaultPasswordManagerPromptComponent implements OnInit {
     { initialValue: false },
   );
 
-  protected readonly logo = BitwardenLogo;
+  protected readonly logo = process.env.FIREFOX_FORK_BUILD === "true" ? undefined : BitwardenLogo;
   protected readonly backgroundIllustration = computed(() =>
     this.isDarkTheme() ? DefaultPasswordBackgroundDark : DefaultPasswordBackgroundLight,
   );

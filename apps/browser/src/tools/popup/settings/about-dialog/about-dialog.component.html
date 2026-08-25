@@ -2,9 +2,19 @@
   <div bitDialogIcon>
     <i class="bwi bwi-shield bwi-3x" aria-hidden="true"></i>
   </div>
-  <div bitDialogTitle>Bitwarden</div>
+  <div bitDialogTitle>{{ "appName" | i18n }}</div>
   <div bitDialogContent>
-    <p>&copy; Bitwarden Inc. 2015-{{ year }}</p>
+    <ng-container *ngIf="isFirefoxFork; else upstreamCopyright">
+      <p>Independent build by {{ forkAuthor }}.</p>
+      <p>
+        Unofficial client; not affiliated with or endorsed by Vaultwarden, Bitwarden Inc., or 8bit
+        Solutions LLC.
+      </p>
+      <p>Based on Bitwarden source code. &copy; Bitwarden Inc. 2015-{{ year }}.</p>
+    </ng-container>
+    <ng-template #upstreamCopyright>
+      <p>&copy; Bitwarden Inc. 2015-{{ year }}</p>
+    </ng-template>
 
     <div #version>
       <p>{{ "version" | i18n }}: {{ version$ | async }}</p>

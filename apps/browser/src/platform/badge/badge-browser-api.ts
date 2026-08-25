@@ -12,6 +12,7 @@ import {
   switchMap,
 } from "rxjs";
 
+import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { PlatformUtilsService } from "@bitwarden/common/platform/abstractions/platform-utils.service";
 import { Utils } from "@bitwarden/common/platform/misc/utils";
 
@@ -163,7 +164,10 @@ export class DefaultBadgeBrowserApi implements BadgeBrowserApi {
     return tabs.filter((tab) => tab.id != undefined && tab.url != undefined).map(tabFromChromeTab);
   }
 
-  constructor(private platformUtilsService: PlatformUtilsService) {}
+  constructor(
+    private platformUtilsService: PlatformUtilsService,
+    private i18nService: I18nService,
+  ) {}
 
   async setState(state: RawBadgeState, tabId?: number): Promise<void> {
     await Promise.all([
@@ -231,7 +235,9 @@ export class DefaultBadgeBrowserApi implements BadgeBrowserApi {
       this.sidebarAction.setBadgeText({ text, tabId });
     } else if (this.sidebarAction) {
       // Firefox
-      const title = `Bitwarden${Utils.isNullOrEmpty(text) ? "" : ` [${text}]`}`;
+      const title = `${this.i18nService.t("appName")}${
+        Utils.isNullOrEmpty(text) ? "" : ` [${text}]`
+      }`;
       await this.sidebarAction.setTitle({ title, tabId });
     }
   }

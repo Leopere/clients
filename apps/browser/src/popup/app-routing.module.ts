@@ -3,7 +3,6 @@ import { ActivatedRouteSnapshot, RouteReuseStrategy, RouterModule, Routes } from
 
 import { AuthenticationTimeoutComponent } from "@bitwarden/angular/auth/components/authentication-timeout.component";
 import { AuthRoute } from "@bitwarden/angular/auth/constants";
-import { EnvironmentSelectorComponent } from "@bitwarden/angular/auth/environment-selector/environment-selector.component";
 import {
   activeAuthGuard,
   authGuard,
@@ -53,6 +52,7 @@ import {
 
 import { AccountSwitcherComponent } from "../auth/popup/account-switching/account-switcher.component";
 import { AuthExtensionRoute } from "../auth/popup/constants/auth-extension-route.constant";
+import { BrowserEnvironmentSelectorComponent } from "../auth/popup/environment-selector/browser-environment-selector.component";
 import { fido2AuthGuard } from "../auth/popup/guards/fido2-auth.guard";
 import { platformPopoutGuard } from "../auth/popup/guards/platform-popout.guard";
 import { AccountSecurityComponent } from "../auth/popup/settings/account-security.component";
@@ -481,7 +481,7 @@ const routes: Routes = [
           { path: "", component: LoginSecondaryContentComponent, outlet: "secondary" },
           {
             path: "",
-            component: EnvironmentSelectorComponent,
+            component: BrowserEnvironmentSelectorComponent,
             outlet: "environment-selector",
           },
         ],
@@ -505,7 +505,7 @@ const routes: Routes = [
           { path: "", component: LoginViaWebAuthnComponent },
           {
             path: "",
-            component: EnvironmentSelectorComponent,
+            component: BrowserEnvironmentSelectorComponent,
             outlet: "environment-selector",
           },
         ],
@@ -527,7 +527,7 @@ const routes: Routes = [
           { path: "", component: SsoComponent },
           {
             path: "",
-            component: EnvironmentSelectorComponent,
+            component: BrowserEnvironmentSelectorComponent,
             outlet: "environment-selector",
           },
         ],
@@ -550,7 +550,7 @@ const routes: Routes = [
           { path: "", component: LoginViaAuthRequestComponent },
           {
             path: "",
-            component: EnvironmentSelectorComponent,
+            component: BrowserEnvironmentSelectorComponent,
             outlet: "environment-selector",
           },
         ],
@@ -573,7 +573,7 @@ const routes: Routes = [
           { path: "", component: PasswordHintComponent },
           {
             path: "",
-            component: EnvironmentSelectorComponent,
+            component: BrowserEnvironmentSelectorComponent,
             outlet: "environment-selector",
           },
         ],

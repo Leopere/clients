@@ -19,6 +19,7 @@ describe("BrowserInitialInstallService", () => {
   let getInstallTypeSpy: jest.SpyInstance;
   let createNewTabSpy: jest.SpyInstance;
   const devFlagEnabledMock = devFlagEnabled as jest.Mock;
+  const originalForkWelcomePage = process.env.FIREFOX_FORK_OPEN_WELCOME_PAGE;
 
   beforeEach(() => {
     const stateProvider = mock<StateProvider>();
@@ -34,11 +35,25 @@ describe("BrowserInitialInstallService", () => {
   });
 
   afterEach(() => {
+    if (originalForkWelcomePage == null) {
+      delete process.env.FIREFOX_FORK_OPEN_WELCOME_PAGE;
+    } else {
+      process.env.FIREFOX_FORK_OPEN_WELCOME_PAGE = originalForkWelcomePage;
+    }
     jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
   describe("displayWelcomePage", () => {
+    it("does not open the upstream welcome page when fork policy disables it", async () => {
+      process.env.FIREFOX_FORK_OPEN_WELCOME_PAGE = "false";
+
+      await service.displayWelcomePage();
+
+      expect(getInstallTypeSpy).not.toHaveBeenCalled();
+      expect(createNewTabSpy).not.toHaveBeenCalled();
+    });
+
     it.each([
       ["Normal", ExtensionInstallType.Normal],
       ["Development", ExtensionInstallType.Development],

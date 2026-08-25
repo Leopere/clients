@@ -1,0 +1,9 @@
+{
+  "summary": {
+    "en-US": "Use an unofficial Firefox password manager client with your self-hosted Vaultwarden server."
+  },
+  "description": {
+    "en-US": "Vaultwarden Companion is an unofficial, independently signed Firefox password manager client for people who use a self-hosted Vaultwarden server. It supports encrypted vault sync, item management, password generation, autofill, and compatible passkey flows. This release is not affiliated with or endorsed by Vaultwarden, Bitwarden, Inc., or 8bit Solutions LLC."
+  },
+  "categories": ["privacy-security"]
+}

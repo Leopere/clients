@@ -1,0 +1,55 @@
+{
+  "manifest_version": 2,
+  "permissions": [
+    "<all_urls>",
+    "*://*/*",
+    "alarms",
+    "clipboardRead",
+    "clipboardWrite",
+    "contextMenus",
+    "idle",
+    "storage",
+    "tabs",
+    "unlimitedStorage",
+    "webNavigation",
+    "webRequest",
+    "webRequestBlocking",
+    "notifications"
+  ],
+  "optional_permissions": ["nativeMessaging", "privacy"],
+  "host_permissions": null,
+  "optional_host_permissions": null,
+  "externally_connectable": null,
+  "background": {
+    "page": "background.html",
+    "persistent": true
+  },
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+  "content_scripts": [
+    {
+      "all_frames": false,
+      "js": ["content/content-message-handler.js"],
+      "matches": ["*://*/*", "file:///*"],
+      "exclude_matches": ["*://*/*.xml*", "file:///*.xml*"],
+      "run_at": "document_start"
+    },
+    {
+      "all_frames": true,
+      "css": ["content/autofill.css"],
+      "js": ["content/trigger-autofill-script-injection.js"],
+      "matches": ["*://*/*", "file:///*"],
+      "exclude_matches": ["*://*/*.xml*", "file:///*.xml*"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    "content/fido2-page-script.js",
+    "notification/bar.html",
+    "images/icon38.png",
+    "images/icon38_locked.png",
+    "overlay/menu-button.html",
+    "overlay/menu-list.html",
+    "overlay/menu.html",
+    "popup/fonts/*"
+  ]
+}
