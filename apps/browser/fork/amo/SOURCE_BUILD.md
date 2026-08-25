@@ -20,8 +20,12 @@ The release command runs the focused fork test suite and the legacy cipher regre
 identity validation, production build, lint, and package validation in one sequence. You do not need to
 run separate prechecks for those cases when using this command.
 
-This repository does not currently perform an AMO submission/signing run. The `release:check:fork:firefox`
-flow is used to build a local package for testing and validation before any external submission is attempted.
+Use `release:check:fork:firefox` to build and validate a local package. For an authorized
+unlisted signing upload, run
+`PUBLISH_AMO=YES npm --workspace @bitwarden/browser run publish:amo:fork:firefox`. The command reads
+`WEB_EXT_API_KEY` and `WEB_EXT_API_SECRET` from the process or tmux environment and requires a clean,
+matching release bundle. After AMO returns the package, the script requires exactly one signed XPI,
+checks its signature and byte-equivalent payload, and then writes the submission receipt.
 
 Set `SOURCE_DATE_EPOCH` to override ZIP timestamps. When it is absent, an original Git checkout uses
 the current commit timestamp. The attached source archive uses the commit and timestamp recorded in
