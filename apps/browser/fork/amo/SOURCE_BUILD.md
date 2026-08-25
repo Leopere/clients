@@ -30,6 +30,10 @@ unlisted signing upload on macOS, store or replace the credentials with
 AMO returns the package, the script requires exactly one signed XPI, checks its signature and
 byte-equivalent payload, and then writes the submission receipt.
 
+Keychain prevents the credentials from entering project files, Git, shell history, and command
+arguments. Its default ACL trusts `/usr/bin/security`, so another process running as the same macOS
+login can retrieve the values while that user's login Keychain is unlocked.
+
 Set `SOURCE_DATE_EPOCH` to override ZIP timestamps. When it is absent, an original Git checkout uses
 the current commit timestamp. The attached source archive uses the commit and timestamp recorded in
 its root `SOURCE_REVISION.json`, so the same command also works after extracting it outside Git.

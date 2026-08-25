@@ -67,16 +67,6 @@ export function readCredentials({
     };
   }
 
-  const tmuxApiKey = readTmuxCredential("WEB_EXT_API_KEY", spawn);
-  const tmuxApiSecret = readTmuxCredential("WEB_EXT_API_SECRET", spawn);
-  if (tmuxApiKey && tmuxApiSecret) {
-    return {
-      apiKey: tmuxApiKey,
-      apiSecret: tmuxApiSecret,
-      source: "tmux environment",
-    };
-  }
-
   if (platform === "darwin") {
     const keychainApiKey = readKeychainCredential("WEB_EXT_API_KEY", spawn);
     const keychainApiSecret = readKeychainCredential("WEB_EXT_API_SECRET", spawn);
@@ -87,6 +77,16 @@ export function readCredentials({
         source: "macOS Keychain",
       };
     }
+  }
+
+  const tmuxApiKey = readTmuxCredential("WEB_EXT_API_KEY", spawn);
+  const tmuxApiSecret = readTmuxCredential("WEB_EXT_API_SECRET", spawn);
+  if (tmuxApiKey && tmuxApiSecret) {
+    return {
+      apiKey: tmuxApiKey,
+      apiSecret: tmuxApiSecret,
+      source: "tmux environment",
+    };
   }
 
   return {};
@@ -166,9 +166,11 @@ async function main() {
   const initialCommit = requireCleanRevision();
   const { apiKey, apiSecret } = readCredentials();
   if (!apiKey || !apiSecret) {
-    throw new Error(
-      "AMO credentials are unavailable. Run npm --workspace @bitwarden/browser run auth:amo:fork:firefox to store them in macOS Keychain.",
-    );
+    const setupHint =
+      process.platform === "darwin"
+        ? "Run npm --workspace @bitwarden/browser run auth:amo:fork:firefox to store them in macOS Keychain."
+        : "Set both WEB_EXT_API_KEY and WEB_EXT_API_SECRET in the process or tmux environment.";
+    throw new Error(`AMO credentials are unavailable. ${setupHint}`);
   }
 
   run("node", ["scripts/release-check-firefox-fork.mjs"]);

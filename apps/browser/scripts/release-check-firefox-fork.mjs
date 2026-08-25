@@ -529,6 +529,7 @@ async function main() {
   const trackedSourceFiles = await verifySourceProvenance(provenancePolicy, gitMetadata);
 
   run("npm", ["run", "test:fork"], { cwd: browserDirectory });
+  run("npm", ["run", "test:amo-publisher"], { cwd: browserDirectory });
   run(
     "npm",
     [

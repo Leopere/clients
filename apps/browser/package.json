@@ -47,6 +47,7 @@
     "test": "jest",
     "test:fork-identity": "jest --runInBand webpack/firefox-fork-identity.spec.ts",
     "test:fork": "jest --runInBand webpack/firefox-fork-identity.spec.ts src/auth/popup/environment-selector/browser-environment-selector.component.spec.ts src/platform/services/browser-environment.service.spec.ts src/platform/services/browser-initial-install.service.spec.ts src/platform/badge/badge-browser-api.spec.ts src/autofill/browser/main-context-menu-handler.spec.ts",
+    "test:amo-publisher": "node --test ./scripts/publish-firefox-fork-amo.test.mjs",
     "test:watch": "jest --watch",
     "test:watch:all": "jest --watchAll",
     "test:clearCache": "jest --clear-cache",

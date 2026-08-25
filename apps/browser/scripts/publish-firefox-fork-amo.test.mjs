@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { readCredentials } from "./publish-firefox-fork-amo.mjs";
@@ -25,8 +26,30 @@ test("readCredentials prefers a complete process environment pair", () => {
   });
 });
 
-test("readCredentials uses a complete tmux pair before Keychain", () => {
+test("readCredentials prefers macOS Keychain over stale tmux values", () => {
   const spawn = (command, args) => {
+    if (command === "tmux") {
+      assert.fail("a complete Keychain pair must be used before tmux");
+    }
+    assert.equal(command, "/usr/bin/security");
+    const account = args[args.indexOf("-a") + 1];
+    return commandResult(0, `keychain-${account}\n`);
+  };
+
+  const credentials = readCredentials({ env: {}, platform: "darwin", spawn });
+
+  assert.deepEqual(credentials, {
+    apiKey: "keychain-WEB_EXT_API_KEY",
+    apiSecret: "keychain-WEB_EXT_API_SECRET",
+    source: "macOS Keychain",
+  });
+});
+
+test("readCredentials uses a complete tmux pair when Keychain is unavailable", () => {
+  const spawn = (command, args) => {
+    if (command === "/usr/bin/security") {
+      return commandResult(1);
+    }
     assert.equal(command, "tmux");
     const name = args.at(-1);
     return commandResult(0, `${name}=tmux-${name}\n`);
@@ -41,7 +64,7 @@ test("readCredentials uses a complete tmux pair before Keychain", () => {
   });
 });
 
-test("readCredentials retrieves both values from macOS Keychain", () => {
+test("readCredentials uses the fixed macOS Keychain service and accounts", () => {
   const calls = [];
   const spawn = (command, args) => {
     calls.push([command, args]);
@@ -82,4 +105,16 @@ test("readCredentials does not use Keychain outside macOS", () => {
 
   assert.deepEqual(credentials, {});
   assert.deepEqual(commands, ["tmux", "tmux"]);
+});
+
+test("amo-auth uses secure Keychain prompts with a fixed contract", async () => {
+  const script = await readFile(new URL("./amo-auth.zsh", import.meta.url), "utf8");
+  const addCommand = script.match(/\/usr\/bin\/security add-generic-password[\s\S]*?\n\s+-w\n/);
+
+  assert.match(script, /keychain_service="us\.nixc\.amo-publisher"/);
+  assert.match(script, /store_credential "WEB_EXT_API_KEY"/);
+  assert.match(script, /store_credential "WEB_EXT_API_SECRET"/);
+  assert.ok(addCommand, "the Keychain add command must end with a prompted -w option");
+  assert.doesNotMatch(addCommand[0], /(^|\s)-A(\s|$)/);
+  assert.match(addCommand[0], /\n\s+-w\n$/);
 });
