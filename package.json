@@ -1,17 +1,18 @@
 {
-  "name": "@bitwarden/clients",
+  "name": "@vaultwarden-companion/clients",
   "version": "0.0.0",
-  "description": "Bitwarden Client Applications",
+  "private": true,
+  "description": "Source workspace for the Vaultwarden Companion Firefox extension",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitwarden/clients.git"
+    "url": "git+https://github.com/Leopere/clients.git"
   },
-  "author": "Bitwarden Inc. <hello@bitwarden.com> (https://bitwarden.com)",
+  "author": "ColinKnapp.com",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/bitwarden/clients/issues"
+    "url": "https://github.com/Leopere/clients/issues"
   },
-  "homepage": "https://bitwarden.com",
+  "homepage": "https://colinknapp.com/",
   "scripts": {
     "prepare": "husky",
     "lint": "eslint . --cache --cache-strategy content && prettier --check .",
@@ -26,7 +27,6 @@
     "test:types": "node ./scripts/test-types.js",
     "test:locales": "tsc --project ./scripts/tsconfig.json && node ./scripts/dist/test-locales.js",
     "lint:dep-ownership": "tsc --project ./scripts/tsconfig.json && node ./scripts/dist/dep-ownership.js",
-    "lint:sdk-internal-versions": "tsc --project ./scripts/tsconfig.json && node ./scripts/dist/sdk-internal-versions.js",
     "docs:json": "compodoc -p ./tsconfig.json -e json -d . --disableRoutesGraph",
     "storybook": "ng run components:storybook",
     "storybook:combined": "STORYBOOK_DEV=\"combined\" concurrently \"npm run storybook\" \"npm run storybook:autofill:combined\"",
@@ -175,8 +175,6 @@
     "@angular/forms": "21.2.17",
     "@angular/platform-browser": "21.2.17",
     "@angular/router": "21.2.17",
-    "@bitwarden/commercial-sdk-internal": "0.2.0-main.983",
-    "@bitwarden/desktop-napi": "file:apps/desktop/desktop_native/napi",
     "@bitwarden/sdk-internal": "0.2.0-main.983",
     "@bufbuild/protobuf": "2.13.0",
     "@electron/fuses": "2.1.1",

@@ -20,7 +20,7 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const ROOT_DIR = path.join(__dirname, "../..");
 
 // Directories to search for icon references
-const SEARCH_PATHS = ["apps/", "libs/", "bitwarden_license/"];
+const SEARCH_PATHS = ["apps/", "libs/"];
 
 // File extensions to process
 const FILE_EXTENSIONS = [".ts", ".html", ".scss", ".css", ".md", ".mdx"];

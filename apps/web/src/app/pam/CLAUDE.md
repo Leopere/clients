@@ -1,6 +1,5 @@
 # PAM (OSS seams)
 
-This directory holds the OSS-side integration seams for the commercial Privileged Access
-Management (PAM) feature — currently just the organization admin-console nav slot
-(`org-nav-slot/`). The feature itself, including its domain contracts, lives in
-`bitwarden_license/bit-web/src/app/pam/`.
+This directory retains the open source integration seam for Privileged Access Management (PAM):
+the organization admin-console navigation slot (`org-nav-slot/`). The feature implementation is not
+part of this GPL-only fork.

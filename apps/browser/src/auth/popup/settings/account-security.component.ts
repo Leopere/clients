@@ -172,7 +172,10 @@ export class AccountSecurityComponent implements OnInit, OnDestroy {
     );
 
     // Check if user phishing detection available
-    this.phishingDetectionAvailable$ = this.phishingDetectionSettingsService.available$;
+    this.phishingDetectionAvailable$ =
+      process.env.FIREFOX_FORK_BUILD === "true"
+        ? of(false)
+        : this.phishingDetectionSettingsService.available$;
     this.sharedUnlockFeatureEnabled$ = this.configService.getFeatureFlag$(
       FeatureFlag.SharedUnlockPart2,
     );

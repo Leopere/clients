@@ -51,6 +51,20 @@ describe("BrowserEnvironmentService", () => {
     expect(environment.getIdentityUrl()).toBe("https://self-hosted.invalid/identity");
   });
 
+  it("fails closed for an explicitly stored Self-hosted environment without URLs", async () => {
+    stateProvider.global.getFake(GLOBAL_ENVIRONMENT_KEY).stateSubject.next({
+      region: Region.SelfHosted,
+      urls: new EnvironmentUrls(),
+    });
+
+    const environment = await firstValueFrom(service.globalEnvironment$);
+
+    expect(environment.getRegion()).toBe(Region.SelfHosted);
+    expect(environment.getUrls()).toEqual({});
+    expect(environment.hasBaseUrl()).toBe(false);
+    expect(environment.getApiUrl()).toBe("https://self-hosted.invalid/api");
+  });
+
   it("retains the upstream US default outside the fork build", async () => {
     process.env.FIREFOX_FORK_BUILD = "false";
 

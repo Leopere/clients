@@ -49,6 +49,10 @@ async function sha256(filePath) {
     .digest("hex");
 }
 
+function sha256Buffer(contents) {
+  return createHash("sha256").update(contents).digest("hex");
+}
+
 function archiveEntries(filePath) {
   return run("unzip", ["-Z1", filePath], { stdio: "pipe" }).split("\n").filter(Boolean);
 }
@@ -126,20 +130,32 @@ async function main() {
   }
   requireCleanRevision(initialCommit);
 
-  const unsignedPackagePath = path.join(releaseDirectory, releaseManifest.package.file);
-  const sourceArchivePath = path.join(releaseDirectory, releaseManifest.source.file);
-  if ((await sha256(unsignedPackagePath)) !== releaseManifest.package.sha256) {
+  const releasePackagePath = path.join(releaseDirectory, releaseManifest.package.file);
+  const releaseSourcePath = path.join(releaseDirectory, releaseManifest.source.file);
+  const packageBytes = await readFile(releasePackagePath);
+  const sourceBytes = await readFile(releaseSourcePath);
+  if (sha256Buffer(packageBytes) !== releaseManifest.package.sha256) {
     throw new Error("The verified unsigned package hash does not match the release manifest.");
   }
-  if ((await sha256(sourceArchivePath)) !== releaseManifest.source.sha256) {
+  if (sha256Buffer(sourceBytes) !== releaseManifest.source.sha256) {
     throw new Error("The verified source archive hash does not match the release manifest.");
   }
 
   const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "vaultwarden-companion-sign-"));
+  const unsignedPackagePath = path.join(temporaryRoot, releaseManifest.package.file);
+  const sourceArchivePath = path.join(temporaryRoot, releaseManifest.source.file);
   const unsignedSourceDirectory = path.join(temporaryRoot, "unsigned");
   const signedPayloadDirectory = path.join(temporaryRoot, "signed");
 
   try {
+    await writeFile(unsignedPackagePath, packageBytes, { flag: "wx", mode: 0o400 });
+    await writeFile(sourceArchivePath, sourceBytes, { flag: "wx", mode: 0o400 });
+    if (
+      (await sha256(unsignedPackagePath)) !== releaseManifest.package.sha256 ||
+      (await sha256(sourceArchivePath)) !== releaseManifest.source.sha256
+    ) {
+      throw new Error("The private submission snapshots do not match the verified release bundle.");
+    }
     await mkdir(unsignedSourceDirectory, { recursive: true });
     run("unzip", ["-q", unsignedPackagePath, "-d", unsignedSourceDirectory], { stdio: "pipe" });
     requireCleanRevision(initialCommit);

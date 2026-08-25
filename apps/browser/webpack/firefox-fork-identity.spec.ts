@@ -334,6 +334,13 @@ describe("Firefox fork identity", () => {
     expect(built.appLogoLabel.message).toBe(identity.logoLabel);
     expect(built.extName.message).toBe(identity.name);
     expect(built.extDesc.message).toBe(identity.description);
+    expect(built.newToBitwarden.message).toBe("Need an account?");
+    expect(built.aboutBitwarden.message).toBe(`About ${identity.name}`);
+    expect(built.moreFromBitwarden.message).toBe("More resources");
+    expect(built.bitWebVaultApp.message).toBe("Account server web app");
+    expect(built.continueToWebAppDesc.message).toBe(
+      "Open more account features on your selected server's web app.",
+    );
     expect(built.addItem).toEqual(original.addItem);
   });
 });

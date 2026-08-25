@@ -1741,33 +1741,35 @@ export default class MainBackground {
       this.accountService,
     );
 
-    this.phishingDataService = new PhishingDataService(
-      this.apiService,
-      this.taskSchedulerService,
-      this.globalStateProvider,
-      this.logService,
-      this.platformUtilsService,
-    );
+    if (process.env.FIREFOX_FORK_BUILD !== "true") {
+      this.phishingDataService = new PhishingDataService(
+        this.apiService,
+        this.taskSchedulerService,
+        this.globalStateProvider,
+        this.logService,
+        this.platformUtilsService,
+      );
 
-    this.phishingDetectionSettingsService = new PhishingDetectionSettingsService(
-      this.accountService,
-      this.billingAccountProfileStateService,
-      this.configService,
-      this.logService,
-      this.organizationService,
-      this.platformUtilsService,
-      this.stateProvider,
-    );
+      this.phishingDetectionSettingsService = new PhishingDetectionSettingsService(
+        this.accountService,
+        this.billingAccountProfileStateService,
+        this.configService,
+        this.logService,
+        this.organizationService,
+        this.platformUtilsService,
+        this.stateProvider,
+      );
 
-    this.phishingDetectionService = new PhishingDetectionService(
-      this.logService,
-      this.phishingDataService,
-      this.phishingDetectionSettingsService,
-      messageListener,
-      this.eventCollectionService,
-      this.organizationService,
-      this.accountService,
-    );
+      this.phishingDetectionService = new PhishingDetectionService(
+        this.logService,
+        this.phishingDataService,
+        this.phishingDetectionSettingsService,
+        messageListener,
+        this.eventCollectionService,
+        this.organizationService,
+        this.accountService,
+      );
+    }
 
     this.sharedUnlockSettingsService = new DefaultSharedUnlockSettingsService(this.stateProvider);
     this.sharedUnlockLeaderService = new DefaultSharedUnlockLeaderService(

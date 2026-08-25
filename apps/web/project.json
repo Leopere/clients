@@ -30,82 +30,6 @@
             "ENV": "development"
           }
         },
-        "commercial": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts"
-        },
-        "commercial-dev": {
-          "mode": "development",
-          "outputPath": "dist/apps/web/commercial-dev",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "development",
-            "ENV": "development"
-          }
-        },
-        "commercial-qa": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-qa",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "production",
-            "ENV": "qa"
-          }
-        },
-        "commercial-cloud": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-cloud",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "production",
-            "ENV": "cloud"
-          }
-        },
-        "commercial-euprd": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-euprd",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "production",
-            "ENV": "euprd"
-          }
-        },
-        "commercial-euqa": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-euqa",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "production",
-            "ENV": "euqa"
-          }
-        },
-        "commercial-usdev": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-usdev",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "production",
-            "ENV": "usdev"
-          }
-        },
-        "commercial-ee": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-ee",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "NODE_ENV": "production",
-            "ENV": "ee"
-          }
-        },
         "oss-selfhost": {
           "mode": "production",
           "outputPath": "dist/apps/web/oss-selfhost",
@@ -117,26 +41,6 @@
         "oss-selfhost-dev": {
           "mode": "development",
           "outputPath": "dist/apps/web/oss-selfhost-dev",
-          "env": {
-            "NODE_ENV": "development",
-            "ENV": "selfhosted"
-          }
-        },
-        "commercial-selfhost": {
-          "mode": "production",
-          "outputPath": "dist/apps/web/commercial-selfhost",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
-          "env": {
-            "ENV": "selfhosted",
-            "NODE_ENV": "production"
-          }
-        },
-        "commercial-selfhost-dev": {
-          "mode": "development",
-          "outputPath": "dist/apps/web/commercial-selfhost-dev",
-          "webpackConfig": "bitwarden_license/bit-web/webpack.config.js",
-          "main": "bitwarden_license/bit-web/src/main.ts",
           "env": {
             "NODE_ENV": "development",
             "ENV": "selfhosted"
@@ -156,14 +60,8 @@
         "oss-dev": {
           "buildTarget": "web:build:oss-dev"
         },
-        "commercial-dev": {
-          "buildTarget": "web:build:commercial-dev"
-        },
         "oss-selfhost-dev": {
           "buildTarget": "web:build:oss-selfhost-dev"
-        },
-        "commercial-selfhost-dev": {
-          "buildTarget": "web:build:commercial-selfhost-dev"
         }
       }
     },

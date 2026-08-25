@@ -67,10 +67,13 @@ This fork is for the Bitwarden Firefox extension only.
   - context-menu and Firefox sidebar titles,
   - and visible Firefox icons.
 - Fork builds show the configured product name as text where the upstream build uses the Bitwarden wordmark. Add an approved fork wordmark separately after its asset is provided.
-- Keep all other Bitwarden service and feature copy unchanged until separately approved.
+- Fork settings omit upstream product-promotion, app-download, support, and official-store links.
+- Preserve accurate Bitwarden names where the extension identifies an upstream service or compatible
+  external Bitwarden application; do not present those products as fork-owned.
 - Self-hosted, US, EU, Government, and previously saved self-hosted URLs are preserved as saved choices and are not overwritten by defaults.
 - Browser-managed environments take precedence over fork onboarding.
 - Do not add `update_url`.
+- The fork output explicitly excludes upstream `logo-dark@2x.png` and `logo-white@2x.png` wordmark PNGs from Firefox packaged artifacts.
 - The AMO publisher uses Mozilla's unlisted self-distribution channel. It runs the full release gate,
   loads guarded AMO credentials from the environment or tmux server memory, uploads the matching
   human-readable source archive, and stores the signed XPI and non-secret receipt in `dist/signed/`.
@@ -133,6 +136,10 @@ Only declare “stable” after completing all of these:
 
 ## Licensing
 
+- Fork provenance policy: browser fork inputs exclude tracked `bitwarden_license/*` from this fork path and `@bitwarden/commercial-sdk-internal` from build dependency inputs.
+- `@bitwarden/sdk-internal` and other `@bitwarden/*` modules used by browser code are upstream GNU GPL code paths or internal namespaces and are not part of the removed commercial SDK lane.
+- The release gate verifies that fork source trees and source archives contain no tracked commercial
+  source or commercial SDK dependency declarations, and that browser XPI output contains no
+  commercial SDK payload.
 - Keep `LICENSE.txt`, `LICENSE_GPL.txt`, `LICENSE_BITWARDEN.txt`, and all third-party notices intact.
-- The OSS Firefox fork uses the repository's default GPL-3.0 code and must not include modules under `bitwarden_license`, which use the Bitwarden License.
-- Preserve upstream and third-party license coverage as-is. ColinKnapp proprietary copyright applies only to the Vaultwarden Companion name and original fork artwork.
+- Preserve upstream and third-party license coverage as-is. ColinKnapp proprietary copyright applies only to the Vaultwarden Companion name, publisher details, and original fork artwork.

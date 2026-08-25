@@ -25,20 +25,6 @@
         "oss-dev": {
           "mode": "development",
           "outputPath": "dist/apps/cli/oss-dev"
-        },
-        "commercial": {
-          "mode": "production",
-          "outputPath": "dist/apps/cli/commercial",
-          "webpackConfig": "bitwarden_license/bit-cli/webpack.config.js",
-          "main": "bitwarden_license/bit-cli/src/bw.ts",
-          "tsConfig": "bitwarden_license/bit-cli/tsconfig.json"
-        },
-        "commercial-dev": {
-          "mode": "development",
-          "outputPath": "dist/apps/cli/commercial-dev",
-          "webpackConfig": "bitwarden_license/bit-cli/webpack.config.js",
-          "main": "bitwarden_license/bit-cli/src/bw.ts",
-          "tsConfig": "bitwarden_license/bit-cli/tsconfig.json"
         }
       }
     },
@@ -58,13 +44,6 @@
         "oss-dev": {
           "mode": "development",
           "outputPath": "dist/apps/cli/oss-dev"
-        },
-        "commercial-dev": {
-          "mode": "development",
-          "outputPath": "dist/apps/cli/commercial-dev",
-          "webpackConfig": "bitwarden_license/bit-cli/webpack.config.js",
-          "main": "bitwarden_license/bit-cli/src/bw.ts",
-          "tsConfig": "bitwarden_license/bit-cli/tsconfig.json"
         }
       }
     },

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { existsSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -11,6 +12,7 @@ const browserDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url
 const repositoryDirectory = path.resolve(browserDirectory, "../..");
 const forkDirectory = path.join(browserDirectory, "fork");
 const manifestPolicyPath = path.join(forkDirectory, "firefox-manifest-policy.json");
+const provenancePolicyPath = path.join(forkDirectory, "firefox-provenance-policy.json");
 const buildDirectory = path.join(browserDirectory, "build-fork-firefox");
 const releaseDirectory = path.join(browserDirectory, "dist/release");
 const amoDirectory = path.join(forkDirectory, "amo");
@@ -38,6 +40,7 @@ const sourceRootFiles = [
   "LICENSE_BITWARDEN.txt",
   "LICENSE_GPL.txt",
   "README.md",
+  "SOURCE_REVISION.json",
   "angular.json",
   "babel.config.json",
   "eslint.config.mjs",
@@ -76,6 +79,7 @@ function run(command, args, options = {}) {
     encoding: "utf8",
     env: options.env ?? process.env,
     input: options.input,
+    maxBuffer: options.maxBuffer ?? 128 * 1024 * 1024,
     stdio: options.stdio ?? "inherit",
   });
   if (result.error) {
@@ -124,28 +128,75 @@ async function copySourceFile(stagingDirectory, relativePath) {
   await cp(source, destination);
 }
 
-function sourceArchiveFiles() {
-  const output = run(
-    "git",
-    [
-      "ls-files",
-      "-z",
-      "--cached",
-      "--others",
-      "--exclude-standard",
-      "--deduplicate",
-      "--",
-      ...sourceRootFiles,
-      "apps/browser",
-      "libs",
-      "scripts",
-    ],
-    { stdio: "pipe" },
-  );
+function readGitMetadata() {
+  const probe = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+    cwd: repositoryDirectory,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  if (
+    probe.status !== 0 ||
+    realpathSync(probe.stdout.trim()) !== realpathSync(repositoryDirectory)
+  ) {
+    return null;
+  }
 
-  return output
-    .split("\0")
-    .filter(Boolean)
+  const status = run("git", ["status", "--porcelain=v1", "--untracked-files=all"], {
+    stdio: "pipe",
+  });
+  return {
+    clean: status.length === 0,
+    commit: run("git", ["rev-parse", "HEAD"], { stdio: "pipe" }),
+    sourceDateEpoch: Number(run("git", ["show", "-s", "--format=%ct", "HEAD"], { stdio: "pipe" })),
+  };
+}
+
+async function readEmbeddedSourceRevision() {
+  const revisionPath = path.join(repositoryDirectory, "SOURCE_REVISION.json");
+  if (!existsSync(revisionPath)) {
+    throw new Error(
+      "This source tree has no repository metadata or SOURCE_REVISION.json provenance record.",
+    );
+  }
+  const revision = JSON.parse(await readFile(revisionPath, "utf8"));
+  if (!/^[0-9a-f]{40}$/i.test(revision.commit) || !Number.isSafeInteger(revision.sourceDateEpoch)) {
+    throw new Error("SOURCE_REVISION.json contains invalid source provenance metadata.");
+  }
+  return { ...revision, clean: null };
+}
+
+async function sourceArchiveFiles(gitMetadata) {
+  let files;
+  if (gitMetadata != null) {
+    const output = run(
+      "git",
+      [
+        "ls-files",
+        "-z",
+        "--cached",
+        "--others",
+        "--exclude-standard",
+        "--deduplicate",
+        "--",
+        ...sourceRootFiles,
+        "apps/browser",
+        "libs",
+        "scripts",
+      ],
+      { stdio: "pipe" },
+    );
+    files = output.split("\0").filter(Boolean);
+  } else {
+    files = sourceRootFiles.filter((relativePath) =>
+      existsSync(path.join(repositoryDirectory, relativePath)),
+    );
+    for (const relativeDirectory of ["apps/browser", "libs", "scripts"]) {
+      files.push(...(await listFiles(repositoryDirectory, relativeDirectory)));
+    }
+  }
+
+  return [...new Set(files)]
+    .filter((relativePath) => existsSync(path.join(repositoryDirectory, relativePath)))
     .filter((relativePath) => {
       const parts = relativePath.split(path.sep);
       return (
@@ -153,6 +204,204 @@ function sourceArchiveFiles() {
       );
     })
     .sort();
+}
+
+function readArchiveFiles(archivePath) {
+  return run("unzip", ["-Z1", archivePath], { stdio: "pipe" })
+    .split("\n")
+    .filter(Boolean)
+    .map((entry) => entry.replaceAll("\\", "/"));
+}
+
+function verifyPackageMetadata(packageText, lockText, policy, label) {
+  const packageJson = JSON.parse(packageText);
+  const dependencies = {
+    ...packageJson.dependencies,
+    ...packageJson.devDependencies,
+    ...packageJson.optionalDependencies,
+  };
+  for (const packageName of policy.forbiddenPackages) {
+    if (Object.hasOwn(dependencies, packageName) || lockText.includes(`\"${packageName}\"`)) {
+      throw new Error(`${label} contains forbidden commercial package ${packageName}.`);
+    }
+  }
+  if (lockText.includes("BITWARDEN SOFTWARE DEVELOPMENT KIT LICENSE AGREEMENT")) {
+    throw new Error(`${label} contains commercial SDK license metadata.`);
+  }
+}
+
+async function verifySourceProvenance(policy, gitMetadata) {
+  const trackedFiles = (
+    gitMetadata == null
+      ? await sourceArchiveFiles(null)
+      : run("git", ["ls-files", "-z"], { stdio: "pipe" }).split("\0").filter(Boolean)
+  ).map((entry) => entry.replaceAll("\\", "/"));
+
+  for (const prefix of policy.forbiddenTrackedPrefixes) {
+    const match = trackedFiles.find((entry) => entry.startsWith(prefix));
+    if (match != null) {
+      throw new Error(`Tracked commercial source is forbidden by fork policy: ${match}`);
+    }
+    if (existsSync(path.join(repositoryDirectory, prefix))) {
+      throw new Error(`Commercial source exists in the working tree: ${prefix}`);
+    }
+  }
+  for (const relativePath of policy.forbiddenSourcePaths) {
+    if (existsSync(path.join(repositoryDirectory, relativePath))) {
+      throw new Error(`Forbidden upstream brand asset exists in fork source: ${relativePath}`);
+    }
+  }
+  for (const relativePath of policy.requiredNotices) {
+    if (!(await stat(path.join(repositoryDirectory, relativePath))).isFile()) {
+      throw new Error(`Required upstream notice is missing: ${relativePath}`);
+    }
+  }
+
+  verifyPackageMetadata(
+    await readFile(path.join(repositoryDirectory, "package.json"), "utf8"),
+    await readFile(path.join(repositoryDirectory, "package-lock.json"), "utf8"),
+    policy,
+    "Repository dependency metadata",
+  );
+
+  for (const packageName of policy.forbiddenPackages) {
+    const installedPath = path.join(repositoryDirectory, "node_modules", ...packageName.split("/"));
+    if (existsSync(installedPath)) {
+      throw new Error(`Forbidden commercial package is installed locally: ${packageName}`);
+    }
+  }
+
+  return trackedFiles.length;
+}
+
+async function verifyBuildProvenance(policy) {
+  const buildFiles = (await listFiles(buildDirectory)).map((entry) => entry.replaceAll("\\", "/"));
+  for (const relativePath of policy.forbiddenArtifactPaths) {
+    if (buildFiles.includes(relativePath)) {
+      throw new Error(`Fork build contains forbidden upstream brand asset: ${relativePath}`);
+    }
+  }
+
+  const textExtensions = new Set([".css", ".html", ".js", ".json", ".map", ".svg", ".txt"]);
+  for (const relativePath of buildFiles) {
+    if (!textExtensions.has(path.extname(relativePath))) {
+      continue;
+    }
+    const contents = await readFile(path.join(buildDirectory, relativePath), "utf8");
+    for (const forbiddenText of policy.forbiddenArtifactText) {
+      if (contents.includes(forbiddenText)) {
+        throw new Error(
+          `Fork build contains forbidden commercial marker ${JSON.stringify(forbiddenText)} in ${relativePath}.`,
+        );
+      }
+    }
+  }
+
+  const packageLock = JSON.parse(
+    await readFile(path.join(repositoryDirectory, "package-lock.json"), "utf8"),
+  );
+  const lockedSdk = packageLock.packages?.[`node_modules/${policy.gplSdk.package}`];
+  const installedSdk = JSON.parse(
+    await readFile(
+      path.join(repositoryDirectory, "node_modules", policy.gplSdk.package, "package.json"),
+      "utf8",
+    ),
+  );
+  if (
+    lockedSdk?.version !== policy.gplSdk.version ||
+    lockedSdk?.license !== policy.gplSdk.license ||
+    installedSdk.version !== policy.gplSdk.version ||
+    installedSdk.license !== policy.gplSdk.license ||
+    installedSdk.repository?.url !== `git+${policy.gplSdk.repository}`
+  ) {
+    throw new Error("The installed OSS SDK does not match the pinned GPL provenance policy.");
+  }
+
+  const expectedWasmHash = policy.gplSdk.wasmSha256;
+  const installedWasmHash = await sha256(path.join(repositoryDirectory, policy.gplSdk.wasm));
+  if (installedWasmHash !== expectedWasmHash) {
+    throw new Error("The installed OSS SDK WebAssembly does not match the reviewed GPL payload.");
+  }
+  const wasmFiles = buildFiles.filter((entry) => entry.endsWith(".wasm"));
+  if (wasmFiles.length === 0) {
+    throw new Error("Fork build contains no SDK WebAssembly artifact to verify.");
+  }
+  const wasmHashes = await Promise.all(
+    wasmFiles.map((entry) => sha256(path.join(buildDirectory, entry))),
+  );
+  if (!wasmHashes.includes(expectedWasmHash)) {
+    throw new Error("Fork build SDK WebAssembly does not match the installed GPL SDK package.");
+  }
+
+  return { buildFiles: buildFiles.length, gplSdkWasmSha256: expectedWasmHash };
+}
+
+async function verifyPackageMatchesBuild(archivePath) {
+  const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "vaultwarden-companion-package-"));
+  try {
+    run("unzip", ["-q", archivePath, "-d", temporaryRoot], { stdio: "pipe" });
+    const expectedFiles = (await listFiles(buildDirectory))
+      .map((entry) => entry.replaceAll("\\", "/"))
+      .filter((entry) => !entry.endsWith(".map"));
+    const packagedFiles = (await listFiles(temporaryRoot)).map((entry) =>
+      entry.replaceAll("\\", "/"),
+    );
+    if (!isDeepStrictEqual(packagedFiles, expectedFiles)) {
+      throw new Error("Runnable XPI file list does not match the verified build output.");
+    }
+    for (const relativePath of expectedFiles) {
+      if (
+        (await sha256(path.join(buildDirectory, relativePath))) !==
+        (await sha256(path.join(temporaryRoot, relativePath)))
+      ) {
+        throw new Error(`Runnable XPI differs from the verified build: ${relativePath}`);
+      }
+    }
+    return packagedFiles.length;
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+}
+
+async function verifyArchivePaths(archivePath, policy, archiveKind) {
+  const archiveFiles = readArchiveFiles(archivePath);
+  const forbiddenPaths =
+    archiveKind === "source"
+      ? [...policy.forbiddenTrackedPrefixes, ...policy.forbiddenSourcePaths]
+      : policy.forbiddenArtifactPaths;
+  for (const forbiddenPath of forbiddenPaths) {
+    const match = archiveFiles.find(
+      (entry) => entry === forbiddenPath || entry.startsWith(forbiddenPath),
+    );
+    if (match != null) {
+      throw new Error(`${archiveKind} archive contains forbidden path: ${match}`);
+    }
+  }
+  if (archiveKind === "package" && archiveFiles.some((entry) => entry.endsWith(".map"))) {
+    throw new Error(
+      "Runnable XPI must not contain source maps; human-readable source ships separately.",
+    );
+  }
+  if (archiveKind === "package") {
+    const textExtensions = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
+    for (const archiveFile of archiveFiles) {
+      if (!textExtensions.has(path.extname(archiveFile))) {
+        continue;
+      }
+      const contents = run("unzip", ["-p", archivePath, archiveFile], { stdio: "pipe" });
+      for (const forbiddenText of [
+        ...policy.forbiddenArtifactText,
+        ...policy.forbiddenPackagedText,
+      ]) {
+        if (contents.includes(forbiddenText)) {
+          throw new Error(
+            `Runnable XPI contains forbidden marker ${JSON.stringify(forbiddenText)} in ${archiveFile}.`,
+          );
+        }
+      }
+    }
+  }
+  return archiveFiles.length;
 }
 
 function zipTimestamp(epoch) {
@@ -167,16 +416,25 @@ function zipTimestamp(epoch) {
   );
 }
 
-async function createSourceArchive(archivePath, epoch) {
+async function createSourceArchive(archivePath, revision, gitMetadata) {
   const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "vaultwarden-companion-source-"));
   const stagingDirectory = path.join(temporaryRoot, "vaultwarden-companion-source");
   await mkdir(stagingDirectory, { recursive: true });
   try {
-    for (const relativePath of sourceArchiveFiles()) {
+    for (const relativePath of await sourceArchiveFiles(gitMetadata)) {
       await copySourceFile(stagingDirectory, relativePath);
     }
 
-    const timestamp = zipTimestamp(epoch);
+    await writeFile(
+      path.join(stagingDirectory, "SOURCE_REVISION.json"),
+      `${JSON.stringify(
+        { commit: revision.commit, sourceDateEpoch: revision.sourceDateEpoch },
+        null,
+        2,
+      )}\n`,
+    );
+
+    const timestamp = zipTimestamp(revision.sourceDateEpoch);
     run("find", [".", "-exec", "touch", "-h", "-t", timestamp, "{}", "+"], {
       cwd: stagingDirectory,
       env: { ...process.env, TZ: "UTC" },
@@ -201,6 +459,8 @@ async function main() {
     );
   }
   run("web-ext", ["--version"], { stdio: "pipe" });
+  const gitMetadata = readGitMetadata();
+  const sourceRevision = gitMetadata ?? (await readEmbeddedSourceRevision());
   const identity = firefoxForkIdentity.load(
     "fork/firefox-identity.json",
     "firefox",
@@ -208,7 +468,11 @@ async function main() {
   );
   const packageJson = JSON.parse(await readFile(path.join(browserDirectory, "package.json")));
   const manifestPolicy = JSON.parse(await readFile(manifestPolicyPath));
+  const provenancePolicy = JSON.parse(await readFile(provenancePolicyPath));
   const metadata = JSON.parse(await readFile(path.join(amoDirectory, "amo-metadata.json")));
+  if (provenancePolicy.schemaVersion !== 1) {
+    throw new Error("firefox-provenance-policy.json must use schemaVersion 1.");
+  }
   for (const document of requiredDocuments) {
     const documentPath = path.join(amoDirectory, document);
     if (!(await stat(documentPath)).isFile()) {
@@ -218,6 +482,8 @@ async function main() {
   if (!metadata.summary?.["en-US"] || !metadata.description?.["en-US"]) {
     throw new Error("amo-metadata.json must define en-US summary and description fields.");
   }
+
+  const trackedSourceFiles = await verifySourceProvenance(provenancePolicy, gitMetadata);
 
   run("npm", ["run", "test:fork"], { cwd: browserDirectory });
   run(
@@ -233,6 +499,7 @@ async function main() {
     { cwd: repositoryDirectory },
   );
   run("npm", ["run", "dist:fork:firefox"], { cwd: browserDirectory });
+  const provenance = await verifyBuildProvenance(provenancePolicy);
   const lintResult = JSON.parse(
     run(
       "web-ext",
@@ -321,19 +588,26 @@ async function main() {
   );
   await cp(path.join(browserDirectory, "dist/fork-dist-firefox.zip"), artifactPath);
 
-  const epochText =
-    process.env.SOURCE_DATE_EPOCH ??
-    run("git", ["show", "-s", "--format=%ct", "HEAD"], { stdio: "pipe" });
-  const epoch = Number(epochText);
-  await createSourceArchive(sourceArchivePath, epoch);
+  const sourceDateEpoch = Number(process.env.SOURCE_DATE_EPOCH ?? sourceRevision.sourceDateEpoch);
+  await createSourceArchive(sourceArchivePath, { ...sourceRevision, sourceDateEpoch }, gitMetadata);
+  provenance.packageFiles = await verifyArchivePaths(artifactPath, provenancePolicy, "package");
+  const matchedPackageFiles = await verifyPackageMatchesBuild(artifactPath);
+  if (matchedPackageFiles !== provenance.packageFiles) {
+    throw new Error("Runnable XPI verification produced inconsistent file counts.");
+  }
+  provenance.sourceFiles = await verifyArchivePaths(sourceArchivePath, provenancePolicy, "source");
+  provenance.trackedSourceFiles = trackedSourceFiles;
+  verifyPackageMetadata(
+    run("unzip", ["-p", sourceArchivePath, "package.json"], { stdio: "pipe" }),
+    run("unzip", ["-p", sourceArchivePath, "package-lock.json"], { stdio: "pipe" }),
+    provenancePolicy,
+    "AMO source archive dependency metadata",
+  );
 
   for (const document of requiredDocuments) {
     await cp(path.join(amoDirectory, document), path.join(releaseDirectory, "amo", document));
   }
 
-  const gitStatus = run("git", ["status", "--porcelain=v1", "--untracked-files=all"], {
-    stdio: "pipe",
-  });
   const releaseManifest = {
     channel: identity.distributionChannel,
     dataCollectionPermissions:
@@ -341,13 +615,20 @@ async function main() {
     extensionId: identity.geckoId,
     hostAccess: manifest.permissions.filter((permission) => permission.includes("://")),
     git: {
-      commit: run("git", ["rev-parse", "HEAD"], { stdio: "pipe" }),
-      clean: gitStatus.length === 0,
+      commit: sourceRevision.commit,
+      clean: sourceRevision.clean,
     },
     manifestVersion: manifest.manifest_version,
     manifestPolicy: {
       file: path.relative(browserDirectory, manifestPolicyPath),
       sha256: await sha256(manifestPolicyPath),
+    },
+    provenance: {
+      ...provenance,
+      policy: {
+        file: path.relative(browserDirectory, provenancePolicyPath),
+        sha256: await sha256(provenancePolicyPath),
+      },
     },
     minimumFirefoxVersion: manifest.browser_specific_settings.gecko.strict_min_version,
     mozillaLint: {

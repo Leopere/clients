@@ -1,5 +1,22 @@
 # Vaultwarden Companion changelog
 
+## Unreleased
+
+- Removed commercial code inputs from the fork (`bitwarden_license` modules and
+  `@bitwarden/commercial-sdk-internal`) and documented the remaining `@bitwarden/*` namespace as
+  upstream OSS build inputs.
+- Excluded upstream wordmark PNGs (`logo-dark@2x.png`, `logo-white@2x.png`) from fork XPI output.
+- Removed source maps from the runnable XPI; human-readable source remains in the separate source
+  archive.
+- Disabled the upstream targeting-rules fallback for fork builds. A selected server must advertise
+  its own resource URL.
+- Kept an explicitly stored but blank Self-hosted environment fail-closed instead of normalizing it
+  to a cloud region.
+- Added automated provenance checks for commercial source and package exclusion from release inputs
+  and output.
+- Removed upstream product-promotion, app-download, support, and official-store links from fork
+  settings.
+
 ## 2026.8.0
 
 - Added an independent Firefox name, extension ID, icon set, manifest identity, and all-locale name

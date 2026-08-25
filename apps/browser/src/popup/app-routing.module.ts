@@ -102,9 +102,7 @@ import { IntroCarouselGuard } from "../vault/popup/guards/intro-carousel.guard";
 import { AdminSettingsComponent } from "../vault/popup/settings/admin-settings.component";
 import { AppearanceComponent } from "../vault/popup/settings/appearance.component";
 import { ArchiveComponent } from "../vault/popup/settings/archive.component";
-import { DownloadBitwardenComponent } from "../vault/popup/settings/download-bitwarden.component";
 import { FoldersComponent } from "../vault/popup/settings/folders.component";
-import { MoreFromBitwardenPageComponent } from "../vault/popup/settings/more-from-bitwarden-page.component";
 import { TrashComponent } from "../vault/popup/settings/trash.component";
 import { VaultSettingsComponent } from "../vault/popup/settings/vault-settings.component";
 
@@ -682,18 +680,6 @@ const routes: Routes = [
     component: AboutPageV2Component,
     canActivate: [authGuard],
     data: { elevation: 1 } satisfies RouteDataProperties,
-  },
-  {
-    path: "more-from-bitwarden",
-    component: MoreFromBitwardenPageComponent,
-    canActivate: [authGuard],
-    data: { elevation: 2 } satisfies RouteDataProperties,
-  },
-  {
-    path: "download-bitwarden",
-    component: DownloadBitwardenComponent,
-    canActivate: [authGuard],
-    data: { elevation: 2 } satisfies RouteDataProperties,
   },
   {
     path: "default-password-manager-prompt",

@@ -20,14 +20,29 @@ The release command runs the focused fork test suite and the legacy cipher regre
 identity validation, production build, lint, and package validation in one sequence. You do not need to
 run separate prechecks for those cases when using this command.
 
-Set `SOURCE_DATE_EPOCH` to reproduce ZIP timestamps exactly. When it is absent, the scripts use the
-timestamp of the current Git commit.
+This repository does not currently perform an AMO submission/signing run. The `release:check:fork:firefox`
+flow is used to build a local package for testing and validation before any external submission is attempted.
 
-Release preflight records commit metadata and working-tree cleanliness in the release manifest.
-AMO signing is blocked when the source tree is dirty or has untracked changes, though dirty preflight
-runs are allowed locally for testing.
+Set `SOURCE_DATE_EPOCH` to override ZIP timestamps. When it is absent, an original Git checkout uses
+the current commit timestamp. The attached source archive uses the commit and timestamp recorded in
+its root `SOURCE_REVISION.json`, so the same command also works after extracting it outside Git.
+
+Release preflight records commit metadata and working-tree cleanliness in the release manifest. A
+build from the attached source records cleanliness as `null` because it has no Git metadata. AMO
+signing is blocked unless the source is the matching clean Git checkout; dirty and extracted-source
+preflight runs remain available for local verification.
+
+Provenance checks in this branch now enforce that release inputs and emitted artifacts exclude:
+
+- `bitwarden_license/*` tracked source,
+- `@bitwarden/commercial-sdk-internal` dependency declarations and lock entries,
+- `popup/images/logo-dark@2x.png` and `popup/images/logo-white@2x.png` in the fork XPI,
+
+while preserving required attribution paths and notices. `@bitwarden/sdk-internal` and other `@bitwarden/*`
+modules remain upstream OSS dependencies in the build.
 
 The source archive intentionally excludes generated output, caches, `node_modules`, coverage data,
-and non-browser application source. It includes `apps/browser`, the shared `libs` used by the
-browser build, root package/configuration files, and root build scripts. Archive inputs come from
-Git's tracked and non-ignored file list, so ignored local files and secrets cannot enter the upload.
+and non-browser application source. It includes `apps/browser`, the shared `libs` used by the browser
+build, root package/configuration files, root build scripts, and `SOURCE_REVISION.json`. The original
+archive inputs come from Git's tracked and non-ignored file list, so ignored local files and secrets
+cannot enter the upload. A rebuild from the archive enumerates only those allowlisted paths.

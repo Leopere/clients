@@ -240,7 +240,17 @@ module.exports.buildConfig = function buildConfig(params) {
         },
         browserImagesPattern,
         ...forkIconPatterns,
-        { from: path.resolve(__dirname, "src/popup/images"), to: "popup/images" },
+        {
+          from: path.resolve(__dirname, "src/popup/images"),
+          to: "popup/images",
+          ...(forkIdentity == null
+            ? {}
+            : {
+                globOptions: {
+                  ignore: ["**/logo-dark@2x.png", "**/logo-white@2x.png"],
+                },
+              }),
+        },
         { from: path.resolve(__dirname, "src/autofill/content/autofill.css"), to: "content" },
       ],
     }),

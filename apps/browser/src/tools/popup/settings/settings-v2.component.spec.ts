@@ -242,21 +242,4 @@ describe("SettingsV2Component", () => {
 
     expect(mockNudges.dismissNudge).not.toHaveBeenCalled();
   });
-
-  it("showDownloadBitwardenNudge$ proxies to nudges service for the active account", async () => {
-    const acct = pushActiveAccount("user-xyz");
-
-    mockNudges.showNudgeBadge$.mockImplementation((type: NudgeType) =>
-      of(type === NudgeType.DownloadBitwarden),
-    );
-
-    const fixture = TestBed.createComponent(SettingsV2Component);
-    const component = fixture.componentInstance;
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    const val = await firstValueFrom(component.showDownloadBitwardenNudge$);
-    expect(val).toBe(true);
-    expect(mockNudges.showNudgeBadge$).toHaveBeenCalledWith(NudgeType.DownloadBitwarden, acct.id);
-  });
 });

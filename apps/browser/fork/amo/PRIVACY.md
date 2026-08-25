@@ -27,19 +27,18 @@ A built-in cloud region becomes active only after you select it.
 Some features make additional requests only when needed:
 
 - website icons can come from the icon service configured for your selected server;
-- phishing protection downloads public blocklist and checksum files from Bitwarden's asset host and
-  the Phishing Database project on GitHub; these requests do not include vault contents or visited
-  page URLs;
+- phishing protection code is present for upstream compatibility but is not initialized in this
+  release, so it does not download its blocklist resources;
 - Fill Assist targeting rules can download manifest and forms-map files when
-  **FillAssistTargetingRules** is enabled. These requests go to the resource URL advertised by the
-  selected account server, or to a Bitwarden GitHub release as a fallback. They carry only ordinary
-  HTTP metadata and do not contain vault contents or visited page URLs.
+  **FillAssistTargetingRules** is enabled and the selected account server advertises a resource URL.
+  The fork does not use Bitwarden's GitHub release as a fallback. Requests carry only ordinary HTTP
+  metadata and do not contain vault contents or visited page URLs.
 - exposed-password checks send a password-hash prefix to the Pwned Passwords service, not the
   password itself;
 - passkey checks can request a relying party's standard `/.well-known/webauthn` document;
 - alias-generation tools contact a provider only after you configure and use that provider;
 - organization event records can be sent to your selected account server;
-- help, support, and product links open only after you choose them.
+- the selected account server's web app opens only after you choose it.
 
 The fork does not add advertising, analytics, or a separate telemetry service. It does not sell
 personal data.

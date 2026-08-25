@@ -30,6 +30,23 @@ const MANAGED_ENVIRONMENT_URL_KEYS = [
   "events",
 ] as const satisfies readonly (keyof GroupPolicyEnvironment)[];
 
+function isUnconfiguredSelfHosted(urls: Urls | null): boolean {
+  return (
+    urls == null ||
+    [
+      urls.base,
+      urls.webVault,
+      urls.api,
+      urls.identity,
+      urls.icons,
+      urls.notifications,
+      urls.events,
+      urls.keyConnector,
+      urls.send,
+    ].every((url) => url == null || url.trim().length === 0)
+  );
+}
+
 function normalizeManagedEnvironment(
   environment: GroupPolicyEnvironment | null,
 ): GroupPolicyEnvironment | null {
@@ -102,8 +119,8 @@ export class BrowserEnvironmentService extends DefaultEnvironmentService {
     if (
       process.env.FIREFOX_FORK_BUILD === "true" &&
       process.env.FIREFOX_FORK_DEFAULT_SERVER === "self-hosted" &&
-      region == null &&
-      urls == null
+      (region == null || region === Region.SelfHosted) &&
+      isUnconfiguredSelfHosted(urls)
     ) {
       return new UnconfiguredSelfHostedEnvironment();
     }

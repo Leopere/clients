@@ -5,6 +5,8 @@
 Vaultwarden Companion is an unofficial Firefox password manager client intended for a user-selected
 self-hosted Vaultwarden server.
 
+This package is built for local test and validation. No AMO submission or signing has been performed yet.
+
 ## Test steps
 
 1. Install the submitted XPI in Firefox 142 or newer.
@@ -48,8 +50,19 @@ warnings: 27 uses of `eval` or `Function` in bundled dependencies, 10 dynamic `i
 assignments in the Angular/autofill runtime, and 38 references to APIs used only by other browser
 branches. The release gate fails on any lint error or any change to that exact warning inventory. It
 writes the XPI, source archive, hashes, and release manifest under `apps/browser/dist/release/`.
-The release manifest records the Git commit and whether the working tree is clean. AMO signing is
-blocked when the tree is dirty; local dirty preflight runs are still allowed for testing.
+The source archive includes `SOURCE_REVISION.json`, so this command works after extraction outside
+Git and uses the original commit timestamp. The release manifest records the source commit and Git
+cleanliness, or `null` cleanliness for an extracted archive. AMO signing remains limited to the
+matching clean Git checkout; dirty and extracted-source preflight runs are for local verification.
+
+Fork provenance checks block commercial-only inputs before packaging:
+
+- no tracked `bitwarden_license/*` sources,
+- no `@bitwarden/commercial-sdk-internal` dependency declaration or lock entry,
+- no upstream `logo-dark@2x.png` or `logo-white@2x.png` wordmark files in the emitted XPI.
+
+`@bitwarden/sdk-internal` and other `@bitwarden/*` modules in the bundle are upstream GNU GPL code
+paths, not the removed commercial SDK lane.
 
 The OSS browser build excludes `bitwarden_license`. Root license files and third-party notices are
 included in the source archive. Original fork artwork is identified separately in

@@ -27,9 +27,11 @@ import {
   KeyDefinition,
 } from "@bitwarden/state";
 
-/** Fallback resource location when the server does not provide one */
+/** Upstream fallback resource location when the server does not provide one. */
 const DEFAULT_RESOURCE_BASE_URL =
-  "https://github.com/bitwarden/map-the-web/releases/latest/download";
+  process.env.FIREFOX_FORK_BUILD === "true"
+    ? null
+    : "https://github.com/bitwarden/map-the-web/releases/latest/download";
 
 /** Client-owned manifest filename, resolved against the resource base URL */
 const MANIFEST_FILENAME = "manifest.json";
@@ -207,6 +209,12 @@ export class TargetingRulesDataService {
     }
 
     const resourceBaseUrl = await this._resolveResourceBaseUrl();
+    if (resourceBaseUrl == null) {
+      this.logService.info(
+        "[TargetingRulesDataService] Server did not provide targeting rules; skipping fetch.",
+      );
+      return;
+    }
     const manifestUrl = new URL(MANIFEST_FILENAME, resourceBaseUrl);
 
     // Step 1: Fetch the lightweight manifest to check if the data has changed
@@ -292,9 +300,9 @@ export class TargetingRulesDataService {
    * resolution (`new URL(filename, baseUrl)`) treats the value as a directory
    * rather than dropping its final path segment.
    */
-  private async _resolveResourceBaseUrl(): Promise<string> {
+  private async _resolveResourceBaseUrl(): Promise<string | null> {
     const serverConfig = await firstValueFrom(this.configService.serverConfig$);
     const baseUrl = serverConfig?.environment?.fillAssistRules || DEFAULT_RESOURCE_BASE_URL;
-    return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+    return baseUrl == null ? null : baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   }
 }

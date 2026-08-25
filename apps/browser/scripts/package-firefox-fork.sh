@@ -43,7 +43,20 @@ fi
 
 node "$script_directory/verify-firefox-fork-build.js" "$build_directory" "$manifest_version"
 
-source_epoch="${SOURCE_DATE_EPOCH:-$(git -C "$browser_directory" show -s --format=%ct HEAD)}"
+repository_directory="$(cd "$browser_directory/../.." && pwd)"
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+  source_epoch="$SOURCE_DATE_EPOCH"
+elif git_root="$(git -C "$repository_directory" rev-parse --show-toplevel 2>/dev/null)" && [ "$git_root" = "$repository_directory" ]; then
+  source_epoch="$(git -C "$repository_directory" show -s --format=%ct HEAD)"
+elif [ -f "$repository_directory/SOURCE_REVISION.json" ]; then
+  source_epoch="$(node -e '
+    const revision = require(process.argv[1]);
+    process.stdout.write(String(revision.sourceDateEpoch));
+  ' "$repository_directory/SOURCE_REVISION.json")"
+else
+  echo "Set SOURCE_DATE_EPOCH when building outside the original Git checkout." >&2
+  exit 1
+fi
 case "$source_epoch" in
   "" | *[!0-9]*)
     echo "SOURCE_DATE_EPOCH must be a non-negative integer." >&2
@@ -65,6 +78,8 @@ timestamp="$(node -e '
 staging_directory="$(mktemp -d "${TMPDIR:-/tmp}/bitwarden-firefox-fork.XXXXXX")"
 trap 'rm -rf "$staging_directory"' EXIT
 cp -R "$build_directory/." "$staging_directory"
+# Human-readable source ships separately. Keep source maps out of the runnable XPI.
+find "$staging_directory" -type f -name '*.map' -delete
 TZ=UTC find "$staging_directory" -exec touch -h -t "$timestamp" {} +
 
 mkdir -p "$dist_directory"

@@ -224,6 +224,11 @@ function transformLocale(identity) {
       appLogoLabel: identity.logoLabel,
       extName: identity.name,
       extDesc: identity.description,
+      newToBitwarden: "Need an account?",
+      aboutBitwarden: `About ${identity.name}`,
+      moreFromBitwarden: "More resources",
+      bitWebVaultApp: "Account server web app",
+      continueToWebAppDesc: "Open more account features on your selected server's web app.",
     };
 
     for (const [key, message] of Object.entries(replacements)) {

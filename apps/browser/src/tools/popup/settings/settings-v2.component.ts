@@ -65,12 +65,6 @@ export class SettingsV2Component {
     switchMap((account) => this.accountProfileStateService.hasPremiumFromAnySource$(account.id)),
   );
 
-  readonly showDownloadBitwardenNudge$: Observable<boolean> = this.authenticatedAccount$.pipe(
-    switchMap((account) =>
-      this.nudgesService.showNudgeBadge$(NudgeType.DownloadBitwarden, account.id),
-    ),
-  );
-
   readonly showVaultBadge$: Observable<boolean> = this.authenticatedAccount$.pipe(
     switchMap((account) =>
       this.nudgesService.showNudgeBadge$(NudgeType.EmptyVaultNudge, account.id),

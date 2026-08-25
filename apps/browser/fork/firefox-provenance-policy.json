@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "forbiddenTrackedPrefixes": ["bitwarden_license/"],
+  "forbiddenPackages": ["@bitwarden/commercial-sdk-internal"],
+  "forbiddenSourcePaths": [
+    "apps/browser/src/popup/images/logo-dark@2x.png",
+    "apps/browser/src/popup/images/logo-white@2x.png"
+  ],
+  "forbiddenArtifactPaths": ["popup/images/logo-dark@2x.png", "popup/images/logo-white@2x.png"],
+  "forbiddenArtifactText": [
+    "@bitwarden/commercial-sdk-internal",
+    "bitwarden_license/",
+    "BITWARDEN SOFTWARE DEVELOPMENT KIT LICENSE AGREEMENT"
+  ],
+  "forbiddenPackagedText": [
+    "https://assets.bitwarden.com/security/v1/",
+    "https://github.com/bitwarden/map-the-web/releases/latest/download",
+    "https://bitwarden.com/browser-start/",
+    "https://bitwarden.com/products/",
+    "https://bitwarden.com/download/",
+    "https://addons.mozilla.org/en-US/firefox/addon/bitwarden-password-manager/",
+    "New to Bitwarden?",
+    "About Bitwarden",
+    "More from Bitwarden"
+  ],
+  "requiredNotices": ["LICENSE.txt", "LICENSE_BITWARDEN.txt", "LICENSE_GPL.txt"],
+  "gplSdk": {
+    "package": "@bitwarden/sdk-internal",
+    "version": "0.2.0-main.983",
+    "license": "GPL-3.0",
+    "repository": "https://github.com/bitwarden/sdk-internal.git",
+    "wasm": "node_modules/@bitwarden/sdk-internal/bitwarden_wasm_internal_bg.wasm",
+    "wasmSha256": "2479566e3654c4f40843ce8eea51197b0522ef2d70e487d4f2e9f09ca2e50c03"
+  }
+}
