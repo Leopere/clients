@@ -95,17 +95,19 @@ This fork is for the Bitwarden Firefox extension only.
 - `npm run dist:firefox` is the production Firefox build path for the Manifest V2 package.
 - Manifest V3 packaging exists for Firefox compatibility exploration only and is **not** production at this point.
 
-## Fork continuous integration
+## Fork automation
 
-- `.github/workflows/firefox-fork.yml` is the only active GitHub Actions workflow in this fork.
-- It runs after a push to `main` or a manual dispatch. It does not run code from pull requests.
-- It uses the local self-hosted ARM64 runner and the same `release:check:fork:firefox` command used
-  for local release verification.
-- A successful run uploads the verified unsigned XPI, source archive, checksums, release manifest,
-  and AMO review documents for 14 days.
+- The local `release:check:fork:firefox` command is the release authority for this fork.
+- This repository has no active GitHub Actions workflow. The trusted runner inventory intentionally
+  targets source repositories and excludes GitHub forks, including `Leopere/clients`.
+- `.github/disabled-workflows/firefox-fork.yml` is a reviewed self-hosted workflow template. Do not
+  move it into `.github/workflows` until the runner inventory supports this repository and a test
+  run proves that jobs receive the public-safe runner.
+- The template runs only after a push to `main` or a manual dispatch; it does not run pull-request
+  code. A successful run would upload the verified unsigned release bundle for 14 days.
 - The inherited Bitwarden organization, product, publishing, translation, and repository-management
-  workflows are intentionally not active in this browser-only fork. Refer to the `upstream` remote
-  or Git history when assessing future upstream workflow changes.
+  workflows are intentionally absent from this browser-only fork. Refer to the `upstream` remote or
+  Git history when assessing future upstream workflow changes.
 
 ## Stability gate for release decision
 
