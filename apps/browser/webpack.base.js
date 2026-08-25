@@ -168,20 +168,9 @@ module.exports.buildConfig = function buildConfig(params) {
     }),
   ];
 
-  const browserImagesPattern = {
-    from: path.resolve(__dirname, "src/images"),
-    to: "images",
-    ...(forkIdentity == null
-      ? {}
-      : {
-          globOptions: {
-            ignore: firefoxForkIdentity.REQUIRED_ICON_FILES.map((fileName) => `**/${fileName}`),
-          },
-        }),
-  };
-  const forkIconPatterns =
+  const browserImagePatterns =
     forkIdentity == null
-      ? []
+      ? [{ from: path.resolve(__dirname, "src/images"), to: "images" }]
       : firefoxForkIdentity.REQUIRED_ICON_FILES.map((fileName) => ({
           from: path.join(forkIdentity.iconsDirectory, fileName),
           to: `images/${fileName}`,
@@ -238,8 +227,7 @@ module.exports.buildConfig = function buildConfig(params) {
             ? {}
             : { transform: firefoxForkIdentity.transformLocale(forkIdentity) }),
         },
-        browserImagesPattern,
-        ...forkIconPatterns,
+        ...browserImagePatterns,
         {
           from: path.resolve(__dirname, "src/popup/images"),
           to: "popup/images",

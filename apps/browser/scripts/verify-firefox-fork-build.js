@@ -4,6 +4,7 @@ const path = require("path");
 const {
   FIREFOX_FORK_DATA_COLLECTION_PERMISSIONS,
   FIREFOX_FORK_MIN_VERSION,
+  FORK_IDENTITY_MESSAGE_KEYS,
   OFFICIAL_FIREFOX_GECKO_ID,
   REQUIRED_ICON_FILES,
 } = require("../webpack/firefox-fork-identity");
@@ -123,16 +124,25 @@ function verify(buildDirectory, expectedManifestVersion) {
         fail(`locale "${locale}" does not use the configured "${key}" identity.`);
       }
     }
+    for (const key of FORK_IDENTITY_MESSAGE_KEYS) {
+      if (typeof englishMessages[key]?.message !== "string") {
+        fail(`the English locale is missing reviewed identity message "${key}".`);
+      }
+      if (messages[key]?.message !== englishMessages[key].message) {
+        fail(`locale "${locale}" does not use the reviewed neutral message "${key}".`);
+      }
+    }
+    for (const [key, value] of Object.entries(messages)) {
+      if (typeof value?.message === "string" && /bitwarden/i.test(value.message)) {
+        fail(`locale "${locale}" retains upstream identity in message "${key}".`);
+      }
+    }
   }
 
   for (const fileName of REQUIRED_ICON_FILES) {
     const forkIconPath = path.join(resolvedBuildDirectory, "images", fileName);
     if (!fs.statSync(forkIconPath).isFile()) {
       fail(`the build is missing required icon "${fileName}".`);
-    }
-    const upstreamIconPath = path.join(__dirname, "../src/images", fileName);
-    if (fs.readFileSync(forkIconPath).equals(fs.readFileSync(upstreamIconPath))) {
-      fail(`the build reuses the official Bitwarden icon "${fileName}".`);
     }
   }
 

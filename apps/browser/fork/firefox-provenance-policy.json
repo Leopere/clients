@@ -6,11 +6,34 @@
     "apps/browser/src/popup/images/logo-dark@2x.png",
     "apps/browser/src/popup/images/logo-white@2x.png"
   ],
+  "sourceArchiveExcludedPrefixes": [
+    "apps/browser/src/images/",
+    "apps/browser/src/safari/",
+    "apps/browser/store/"
+  ],
   "forbiddenArtifactPaths": ["popup/images/logo-dark@2x.png", "popup/images/logo-white@2x.png"],
+  "allowedArtifactImagePaths": [
+    "images/berry19.png",
+    "images/berry38.png",
+    "images/icon16.png",
+    "images/icon19.png",
+    "images/icon19_gray.png",
+    "images/icon19_locked.png",
+    "images/icon32.png",
+    "images/icon38.png",
+    "images/icon38_gray.png",
+    "images/icon38_locked.png",
+    "images/icon48.png",
+    "images/icon96.png",
+    "images/icon128.png"
+  ],
   "forbiddenArtifactText": [
     "@bitwarden/commercial-sdk-internal",
     "bitwarden_license/",
-    "BITWARDEN SOFTWARE DEVELOPMENT KIT LICENSE AGREEMENT"
+    "BITWARDEN SOFTWARE DEVELOPMENT KIT LICENSE AGREEMENT",
+    ".bwi-bitwarden-shield",
+    "glyph-name=\"bitwarden-shield\"",
+    "M843.1445333333332 799.9995733333333"
   ],
   "forbiddenPackagedText": [
     "https://assets.bitwarden.com/security/v1/",
@@ -21,9 +44,43 @@
     "https://addons.mozilla.org/en-US/firefox/addon/bitwarden-password-manager/",
     "New to Bitwarden?",
     "About Bitwarden",
-    "More from Bitwarden"
+    "More from Bitwarden",
+    "https://bitwarden.com/contact"
   ],
   "requiredNotices": ["LICENSE.txt", "LICENSE_BITWARDEN.txt", "LICENSE_GPL.txt"],
+  "reviewedForkIconSha256": {
+    "berry19.png": "2fa7ece64d4c4fc365a9c5c7a122db71c44147e527c72e37ac47ddafbcd79073",
+    "berry38.png": "0f66536384ebb4485ae446cfbefe55d21e695f4465a127903cd638c22e01807a",
+    "icon16.png": "e9955d5095efca0c8402458c54735e3ddf0993d9490a067d1f8b9a5d6499eefc",
+    "icon19.png": "2fa7ece64d4c4fc365a9c5c7a122db71c44147e527c72e37ac47ddafbcd79073",
+    "icon19_gray.png": "853d215ead09b37077c8aa32da9aa9be96cbc73b5a3a7c9079817b3bba416764",
+    "icon19_locked.png": "f89a7aa305abb5f4f2d4be612975d2da9a8aad99a3332afd5568ed6cf54603e7",
+    "icon32.png": "bdcf1968d4b9388832810b57263baad430fd57772120fb877741a7c3b12530d2",
+    "icon38.png": "0f66536384ebb4485ae446cfbefe55d21e695f4465a127903cd638c22e01807a",
+    "icon38_gray.png": "8b83a73dd14f526ea55fc4a2fa327c91c181f33701bc9eeedcbb41d7469378ed",
+    "icon38_locked.png": "930f730bfaf931f07fdb3742b1660171066a3708f23a4dcc4d49a0f15fa1c131",
+    "icon48.png": "7931d0c4fe8d9e41b964b5c17c8d358b905e4e2d0fc395b247e013cf23856c60",
+    "icon96.png": "12f48b3af440167dd0946cf0be84ca7b4408267fd29a1bbce96001a8672757c0",
+    "icon128.png": "b81651fe26fed6447a90ea737ac511fca02e93863550219bff156be21c324e5e"
+  },
+  "reviewedIconFontSha256": {
+    ".svg": "97dc08aa4fdc4bcc025a2f0715ae7dfc91dcc25affda1687c6ebe1128d7b2b10",
+    ".ttf": "ba88717981910deadb9d694affbac4c1cd3658a989dbad7284de3f55be9bafdc",
+    ".woff": "421d9387bd14925f814fa93599e1ef189fb54b9a1d3ba99e3f72e5c2c21cb173",
+    ".woff2": "d02fc368a17113a4a33e9273570c3d8621ae7dee222c835009dfbea8a25dcbeb"
+  },
+  "reviewedSourceSha256": {
+    "apps/browser/src/autofill/content/components/icons/shield.ts": "aa7e3e20518fbcb374910370bd3d56d1860efc8b4d99795cfb3bc12874e460b4",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.svg": "97dc08aa4fdc4bcc025a2f0715ae7dfc91dcc25affda1687c6ebe1128d7b2b10",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.ttf": "ba88717981910deadb9d694affbac4c1cd3658a989dbad7284de3f55be9bafdc",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.woff": "421d9387bd14925f814fa93599e1ef189fb54b9a1d3ba99e3f72e5c2c21cb173",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.woff2": "d02fc368a17113a4a33e9273570c3d8621ae7dee222c835009dfbea8a25dcbeb",
+    "libs/assets/src/material-icons/bitwarden-shield.svg": "c46ae40741a7e73a8a435ef44e3c3a765280db88bd3082f875926f729874abdd",
+    "libs/assets/src/svg/svgs/bitwarden-icon.ts": "9537d0b7e9cf1727493ac69bcfe8e14be34036428c0edb843837825f669e25a1",
+    "libs/assets/src/svg/svgs/bitwarden-logo.icon.ts": "e104511ed9d9871d08c1b73f09499ca46051c0f5f592ff0b995d87dda1802542",
+    "libs/assets/src/svg/svgs/shield.ts": "964f519b8269c1aaae14122ab6a493cc6899e037739e29cfea860c964ab44bd5",
+    "libs/assets/src/svg/svgs/side-nav-logo.ts": "87fa2f8bf430ccb9c97b543390c93e481a5bdb4d075c5c17bc8bda6c91657cbe"
+  },
   "gplSdk": {
     "package": "@bitwarden/sdk-internal",
     "version": "0.2.0-main.983",

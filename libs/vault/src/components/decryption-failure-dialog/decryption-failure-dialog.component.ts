@@ -2,12 +2,10 @@ import { CommonModule } from "@angular/common";
 import { Component, inject } from "@angular/core";
 
 import { JslibModule } from "@bitwarden/angular/jslib.module";
-import { PlatformUtilsService } from "@bitwarden/common/platform/abstractions/platform-utils.service";
 import { CipherId } from "@bitwarden/common/types/guid";
 import {
   DIALOG_DATA,
   DialogRef,
-  LinkComponent,
   AsyncActionsModule,
   ButtonModule,
   DialogModule,
@@ -32,13 +30,11 @@ export type DecryptionFailureDialogParams = {
     JslibModule,
     AsyncActionsModule,
     ButtonModule,
-    LinkComponent,
   ],
 })
 export class DecryptionFailureDialogComponent {
   protected dialogRef = inject(DialogRef);
   protected params = inject<DecryptionFailureDialogParams>(DIALOG_DATA);
-  protected platformUtilsService = inject(PlatformUtilsService);
 
   selectText(element: HTMLElement) {
     const selection = window.getSelection();
@@ -49,11 +45,6 @@ export class DecryptionFailureDialogComponent {
     const range = document.createRange();
     range.selectNodeContents(element);
     selection.addRange(range);
-  }
-
-  openContactSupport(event: Event) {
-    event.preventDefault();
-    this.platformUtilsService.launchUri("https://bitwarden.com/contact");
   }
 
   static open(dialogService: DialogService, params: DecryptionFailureDialogParams) {

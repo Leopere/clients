@@ -181,10 +181,6 @@
   content: "\f163";
 }
 
-.bwi-bitwarden-shield:before {
-  content: "\f162";
-}
-
 .bwi-browser:before {
   content: "\f161";
 }
@@ -703,10 +699,6 @@
 
 .bwi-question-circle:before {
   content: "\f137";
-}
-
-.bwi-shield:before {
-  content: "\f162";
 }
 
 .bwi-spinner:before {

@@ -8,7 +8,6 @@ import {
   DialogRef,
   DialogService,
   IconModule,
-  LinkModule,
 } from "@bitwarden/components";
 import { buildFlightRecorderCsvExport } from "@bitwarden/logging";
 import { I18nPipe } from "@bitwarden/ui-common";
@@ -17,7 +16,7 @@ import { FlightRecorderService } from "../flight-recorder.service";
 
 @Component({
   templateUrl: "troubleshooting-dialog.component.html",
-  imports: [DialogModule, ButtonModule, IconModule, LinkModule, I18nPipe],
+  imports: [DialogModule, ButtonModule, IconModule, I18nPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TroubleshootingDialogComponent {

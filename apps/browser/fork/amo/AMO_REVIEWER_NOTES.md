@@ -59,10 +59,22 @@ Fork provenance checks block commercial-only inputs before packaging:
 
 - no tracked `bitwarden_license/*` sources,
 - no `@bitwarden/commercial-sdk-internal` dependency declaration or lock entry,
-- no upstream `logo-dark@2x.png` or `logo-white@2x.png` wordmark files in the emitted XPI.
+- no upstream wordmark, store badge, QR code, screenshot, carousel, health-tab, Safari, or browser
+  icon image in the emitted XPI,
+- no Bitwarden shield glyph in the emitted icon fonts,
+- no user-visible Bitwarden identity in any of the 63 packaged locale message sets. The 125
+  messages that carry upstream identity in at least one source locale use reviewed neutral English
+  wording until independent fork translations are available.
+
+The XPI's `images/` directory is an exact allowlist of 13 reviewed companion icons. Their hashes,
+the shield-free icon-font hashes, and the hashes of neutralized legacy logo export files are pinned
+in `apps/browser/fork/firefox-provenance-policy.json`. The release gate fails if those bytes or the
+image inventory change.
 
 `@bitwarden/sdk-internal` and other `@bitwarden/*` modules in the bundle are upstream GNU GPL code
-paths, not the removed commercial SDK lane.
+paths, not the removed commercial SDK lane. Remaining Bitwarden names identify upstream copyright
+holders, source namespaces, compatible services, or upstream documentation. They do not identify
+this extension as an official Bitwarden product.
 
 The OSS browser build excludes `bitwarden_license`. Root license files and third-party notices are
 included in the source archive. Original fork artwork is identified separately in

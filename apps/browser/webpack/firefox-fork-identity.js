@@ -32,6 +32,136 @@ const REQUIRED_ICON_DIMENSIONS = Object.freeze({
 const REQUIRED_ICON_FILES = Object.freeze(Object.keys(REQUIRED_ICON_DIMENSIONS));
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+// These keys contain the upstream product identity in at least one source locale. Fork builds use
+// one reviewed neutral English value for each key until independent fork translations are available.
+const FORK_IDENTITY_MESSAGE_KEYS = Object.freeze([
+  "about",
+  "aboutBitwarden",
+  "accountRestrictedOptionDescription",
+  "addLoginNotificationDesc",
+  "appLogoLabel",
+  "appName",
+  "authenticatorAppDescV2",
+  "autofillIframeWarningTip",
+  "autofillSpotlightDesc",
+  "awaitDesktopDesc",
+  "biometricPermissionDesc",
+  "biometricsFailedDesc",
+  "biometricsNotEnabledDesc",
+  "biometricsStatusHelptextDesktopDisconnected",
+  "biometricsStatusHelptextNotEnabledInDesktop",
+  "bitwardenAccount",
+  "bitwardenAuthenticator",
+  "bitwardenForBusiness",
+  "bitwardenForBusinessPageDesc",
+  "bitwardenOverlayButton",
+  "bitwardenOverlayMenuAvailable",
+  "bitwardenSecretsManager",
+  "bitwardenSupport",
+  "bitwardenVault",
+  "bitWebVaultApp",
+  "changedPasswordNotificationDesc",
+  "changedPasswordNotificationDescAlt",
+  "changeMasterPasswordOnWebConfirmation",
+  "communityForums",
+  "contactSupport",
+  "contextMenuItemDesc",
+  "continueToAuthenticatorPageDesc",
+  "continueToBitwardenDotCom",
+  "continueToBrowserExtensionStoreDesc",
+  "continueToHelpCenterDesc",
+  "continueToPasswordlessDotDevPageDesc",
+  "continueToSecretsManagerPageDesc",
+  "continueToWebAppDesc",
+  "couldNotDecryptVaultItemsBelow",
+  "defaultPasswordManagerCalloutDesc",
+  "defaultPasswordManagerPromptStep2AfterAllow",
+  "defaultPasswordManagerPromptTitle",
+  "defaultPasswordManagerPromptTitleV2",
+  "defaultPasswordManagerSuccessToast",
+  "defaultUriMatchDetectionDesc",
+  "desktopIntegrationDisabledDesc",
+  "downloadBitwarden",
+  "downloadBitwardenApps",
+  "downloadBitwardenOnAllDevices",
+  "downloadFromBitwardenNow",
+  "emailPlaceholder",
+  "emailPlaceholderMultiple",
+  "emptyVaultNudgeBody",
+  "enableAutoFillOnPageLoadDesc",
+  "encExportAccountWarningDesc",
+  "excludedDomainsDesc",
+  "experiencingAnIssue",
+  "extDesc",
+  "extName",
+  "forwarderGeneratedBy",
+  "forwarderGeneratedByWithWebsite",
+  "freeBitwardenFamilies",
+  "freeBitwardenFamiliesPageDesc",
+  "generatePasswordSlideDesc",
+  "generatePasswordSlideImgAltPeriod",
+  "getTheMobileAppDesc",
+  "gettingStartedTutorial",
+  "gettingStartedTutorialVideo",
+  "helpCenter",
+  "howDoesBitwardenProtectFromPhishing",
+  "importGnomeInstructionsFileHere",
+  "importTargetHintCollection",
+  "introCarouselLabel",
+  "moreFromBitwarden",
+  "nativeMessagingPermissionErrorDesc",
+  "newToBitwarden",
+  "notificationAddDesc",
+  "notificationChangeDesc",
+  "notificationLoginSaveConfirmation",
+  "notificationLoginUpdatedConfirmation",
+  "notificationSentDevicePart1",
+  "notificationSentDevicePart2",
+  "notificationUnlockDesc",
+  "overrideDefaultBrowserAutofillDescription",
+  "overrideDefaultBrowserAutoFillSettings",
+  "overrideDefaultBrowserAutofillTitle",
+  "passwordProtectedOptionDescription",
+  "permitCipherDetailsDescription",
+  "popup2faCloseMessage",
+  "premiumManageAlert",
+  "premiumPurchaseAlertV2",
+  "privacyPermissionAdditionNotGrantedDescription",
+  "privacyPermissionAdditionNotGrantedTitle",
+  "receiveMarketingEmails",
+  "removeMasterPasswordForOrgUserKeyConnector",
+  "saveToBitwarden",
+  "secureDevicesBody",
+  "securityPrioritizedBody",
+  "selfHostedBaseUrlHint",
+  "sessionTimeoutSuppressedByConnectedDevice",
+  "setPinCode",
+  "setYourPinCode",
+  "sharedUnlockDesktopPermissionDesc",
+  "sharedUnlockDesktopPermissionWarning",
+  "sharedUnlockWithDesktopDescription",
+  "sharedUnlockWithWebDescription",
+  "showInlineMenuOnIconSelectionLabel",
+  "startDesktopDesc",
+  "startDesktopTitle",
+  "toggleBitwardenVaultOverlay",
+  "topLayerHijackWarning",
+  "totpHelper",
+  "totpHelperWithCapture",
+  "turnOffBrowserBuiltInPasswordManagerSettings",
+  "twoStepLoginConfirmation",
+  "twoStepLoginConfirmationContent",
+  "updateEncryptionKeyWarning",
+  "updateInBitwarden",
+  "updateInBitwardenSlideDesc",
+  "updateInBitwardenSlideImgAltPeriod",
+  "uriMatchDefaultStrategyHint",
+  "wasmNotSupported",
+  "weakMasterPasswordDesc",
+  "webApp",
+  "welcomeDialogGraphicAlt",
+]);
+
 function fail(message) {
   throw new Error(`Invalid Firefox fork identity: ${message}`);
 }
@@ -158,22 +288,24 @@ function load(configPath, browser, browserDirectory) {
 
   identity.iconsDirectory = path.resolve(path.dirname(resolvedConfigPath), identity.iconsDirectory);
   const upstreamIconsDirectory = path.resolve(resolvedBrowserDirectory, "src/images");
+  if (identity.iconsDirectory === upstreamIconsDirectory) {
+    fail('"iconsDirectory" must provide fork assets, not apps/browser/src/images.');
+  }
   let realIconsDirectory;
   try {
     realIconsDirectory = fs.realpathSync(identity.iconsDirectory);
   } catch (error) {
     fail(`could not read "iconsDirectory": ${error.message}`);
   }
-  if (realIconsDirectory === fs.realpathSync(upstreamIconsDirectory)) {
+  const realUpstreamIconsDirectory = fs.existsSync(upstreamIconsDirectory)
+    ? fs.realpathSync(upstreamIconsDirectory)
+    : upstreamIconsDirectory;
+  if (realIconsDirectory === realUpstreamIconsDirectory) {
     fail('"iconsDirectory" must provide fork assets, not apps/browser/src/images.');
   }
 
   for (const [fileName, size] of Object.entries(REQUIRED_ICON_DIMENSIONS)) {
-    const forkPng = validatePng(path.join(identity.iconsDirectory, fileName), size);
-    const upstreamPng = fs.readFileSync(path.join(upstreamIconsDirectory, fileName));
-    if (forkPng.equals(upstreamPng)) {
-      fail(`"${fileName}" must not reuse the official Bitwarden icon.`);
-    }
+    validatePng(path.join(identity.iconsDirectory, fileName), size);
   }
 
   return Object.freeze(identity);
@@ -217,6 +349,10 @@ function applyToManifest(manifest, identity) {
 }
 
 function transformLocale(identity) {
+  const englishMessages = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, "../src/_locales/en/messages.json"), "utf8"),
+  );
+
   return (buffer) => {
     const messages = JSON.parse(buffer.toString().replace(/^\uFEFF/, ""));
     const replacements = {
@@ -229,13 +365,123 @@ function transformLocale(identity) {
       moreFromBitwarden: "More resources",
       bitWebVaultApp: "Account server web app",
       continueToWebAppDesc: "Open more account features on your selected server's web app.",
+      continueToBrowserExtensionStoreDesc: "Share feedback with your support provider.",
+      continueToBitwardenDotCom: "Continue to the upstream website?",
+      continueToHelpCenterDesc: "Learn more in the upstream documentation.",
+      helpCenter: "Upstream documentation",
+      communityForums: "Upstream community forums",
+      contactSupport: "Contact your support provider",
+      bitwardenSupport: "your server administrator or support provider",
+      downloadDiagnosticReportWith:
+        "Download the diagnostic report before sharing it with your server administrator or support provider.",
+      couldNotDecryptVaultItemsBelow: `${identity.name} could not decrypt the vault items listed below.`,
+      contactCSToAvoidDataLossPart1: "Contact your server administrator or support provider",
+      contactCSToAvoidDataLossPart2: "to avoid further data loss.",
+      bitwardenForBusiness: "Business password management",
+      bitwardenForBusinessPageDesc:
+        "Business password management lets you share vault items through an organization.",
+      bitwardenAuthenticator: "Authenticator app",
+      continueToAuthenticatorPageDesc:
+        "An authenticator app can store keys and generate TOTP codes for two-step verification.",
+      bitwardenSecretsManager: "Secrets management",
+      continueToSecretsManagerPageDesc:
+        "Secrets management tools can securely store, manage, and share developer secrets.",
+      continueToPasswordlessDotDevPageDesc:
+        "Passwordless.dev provides tools for passwordless sign-in experiences.",
+      freeBitwardenFamilies: "Family plan",
+      freeBitwardenFamiliesPageDesc:
+        "Your account may be eligible for a family plan. Check your server's web app for details.",
+      twoStepLoginConfirmation:
+        "Two-step login makes your account more secure. Set it up in your server's web app now?",
+      twoStepLoginConfirmationContent:
+        "Make your account more secure by setting up two-step login in your server's web app.",
+      changeMasterPasswordOnWebConfirmation:
+        "You can change your master password in your server's web app.",
+      premiumManageAlert: "Manage your membership in your server's web app now?",
+      premiumPurchaseAlertV2: "If your server offers premium features, manage them in its web app.",
+      authenticatorAppDescV2: "Enter a code generated by your authenticator app.",
+      selfHostedBaseUrlHint:
+        "Enter the base URL of your self-hosted server. Example: https://vault.example.com",
+      bitwardenAccount: "compatible account",
+      accountRestrictedOptionDescription:
+        "Use your account encryption key to restrict this encrypted export to the current account.",
+      passwordProtectedOptionDescription:
+        "Set a file password so you can import this encrypted export into another compatible account.",
+      encExportAccountWarningDesc:
+        "Account encryption keys are unique, so you can't import this encrypted export into a different account.",
+      receiveMarketingEmails: "Receive account service updates in your inbox.",
+      howDoesBitwardenProtectFromPhishing: "How can I protect my data from phishing?",
+      updateEncryptionKeyWarning:
+        "After updating your encryption key, log out and back in to every compatible client so each one downloads the new key. Delayed sign-out can cause data corruption.",
+      downloadBitwarden: "Get compatible apps",
+      downloadBitwardenApps: "Get compatible apps",
+      downloadBitwardenOnAllDevices: "Use compatible apps on all devices",
+      downloadFromBitwardenNow: "Visit the upstream website",
+      getTheMobileAppDesc: "Use a compatible mobile app to access your passwords on the go.",
+      secureDevicesBody:
+        "Save passwords in this browser and use compatible clients on your other devices.",
+      awaitDesktopDesc:
+        "Confirm in a compatible desktop app to set up biometric unlock in the browser.",
+      desktopIntegrationDisabledDesc:
+        "Browser integration isn't set up in the compatible desktop app. Enable it in the desktop app settings.",
+      startDesktopTitle: "Start the compatible desktop app",
+      startDesktopDesc: "Start the compatible desktop app before you use biometric unlock.",
+      biometricsFailedDesc:
+        "Biometric unlock failed. Use your master password or sign out. If the problem continues, contact your support provider.",
+      nativeMessagingPermissionErrorDesc:
+        "Allow communication with the compatible desktop app to use biometric unlock in the browser.",
+      biometricsStatusHelptextDesktopDisconnected:
+        "Biometric unlock is unavailable because the compatible desktop app is closed.",
+      biometricsStatusHelptextNotEnabledInDesktop:
+        "Biometric unlock isn't enabled for $EMAIL$ in the compatible desktop app.",
+      sessionTimeoutSuppressedByConnectedDevice:
+        "Managed by the compatible desktop app. Open that app to make changes.",
+      sharedUnlockWithDesktopDescription: "Share unlock status with a compatible desktop app.",
+      sharedUnlockWithWebDescription: "Share unlock status with compatible web vaults.",
+      sharedUnlockDesktopPermissionDesc:
+        "Shared unlock needs permission to communicate with the compatible desktop app.",
+      sharedUnlockDesktopPermissionWarning:
+        "The extension will lock and reload after you approve desktop communication.",
+      biometricPermissionDesc:
+        "Biometric unlock needs permission to communicate with the compatible desktop app.",
+      permitCipherDetailsDescription:
+        "This extension uses saved login URIs to identify which icon or change-password URL to use. It does not collect or save information when you use this service.",
+      wasmNotSupported:
+        "WebAssembly is not supported or is disabled in this browser. This extension requires WebAssembly.",
+      removeMasterPasswordForOrgUserKeyConnector:
+        "Your organization no longer uses master passwords. Verify the organization and domain to continue.",
+      emailPlaceholder: "user@example.com",
+      emailPlaceholderMultiple: "user@example.com, admin@example.com",
     };
+
+    for (const key of FORK_IDENTITY_MESSAGE_KEYS) {
+      if (englishMessages[key] == null || typeof englishMessages[key].message !== "string") {
+        fail(`the English locale is missing the reviewed "${key}" identity message.`);
+      }
+      if (messages[key] == null || typeof messages[key] !== "object") {
+        fail(`locale is missing the reviewed "${key}" identity message.`);
+      }
+
+      const englishMessage = englishMessages[key].message
+        .replace(/bitwarden\.com/giu, "the upstream website")
+        .replace(/bitwarden/giu, identity.name);
+      messages[key].message = replacements[key] ?? englishMessage;
+    }
 
     for (const [key, message] of Object.entries(replacements)) {
       if (messages[key] == null || typeof messages[key] !== "object") {
         fail(`locale is missing the required "${key}" message.`);
       }
       messages[key].message = message;
+    }
+
+    for (const value of Object.values(messages)) {
+      if (typeof value?.message !== "string") {
+        continue;
+      }
+      value.message = value.message
+        .replace(/bitwarden\.com/giu, "the upstream website")
+        .replace(/bitwarden/giu, identity.name);
     }
 
     return JSON.stringify(messages, null, 2);
@@ -245,6 +491,7 @@ function transformLocale(identity) {
 module.exports = {
   FIREFOX_FORK_DATA_COLLECTION_PERMISSIONS,
   FIREFOX_FORK_MIN_VERSION,
+  FORK_IDENTITY_MESSAGE_KEYS,
   OFFICIAL_FIREFOX_GECKO_ID,
   REQUIRED_ICON_FILES,
   applyToManifest,

@@ -10,7 +10,7 @@ import {
   CenterPositionStrategy,
 } from "@bitwarden/components";
 import { I18nPipe } from "@bitwarden/ui-common";
-import { DarkImageSourceDirective, VaultCarouselModule } from "@bitwarden/vault";
+import { VaultCarouselModule } from "@bitwarden/vault";
 
 export const AtRiskCarouselDialogResult = {
   Dismissed: "dismissed",
@@ -23,14 +23,7 @@ type AtRiskCarouselDialogResult = UnionOfValues<typeof AtRiskCarouselDialogResul
 @Component({
   selector: "vault-at-risk-carousel-dialog",
   templateUrl: "./at-risk-carousel-dialog.component.html",
-  imports: [
-    DialogModule,
-    VaultCarouselModule,
-    TypographyModule,
-    ButtonModule,
-    DarkImageSourceDirective,
-    I18nPipe,
-  ],
+  imports: [DialogModule, VaultCarouselModule, TypographyModule, ButtonModule, I18nPipe],
 })
 export class AtRiskCarouselDialogComponent {
   private dialogRef = inject(DialogRef);

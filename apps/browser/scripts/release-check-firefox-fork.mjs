@@ -33,13 +33,18 @@ const requiredDocuments = [
 const sourceRootFiles = [
   ".browserslistrc",
   ".editorconfig",
+  ".gitattributes",
+  ".gitignore",
   ".npmrc",
   ".nvmrc",
+  ".prettierignore",
+  ".prettierrc.json",
   "CONTRIBUTING.md",
   "LICENSE.txt",
   "LICENSE_BITWARDEN.txt",
   "LICENSE_GPL.txt",
   "README.md",
+  "SECURITY.md",
   "SOURCE_REVISION.json",
   "angular.json",
   "babel.config.json",
@@ -49,6 +54,7 @@ const sourceRootFiles = [
   "nx.json",
   "package-lock.json",
   "package.json",
+  "ship.sh",
   "tailwind.config.js",
   "tsconfig.base.json",
   "tsconfig.eslint.json",
@@ -165,7 +171,7 @@ async function readEmbeddedSourceRevision() {
   return { ...revision, clean: null };
 }
 
-async function sourceArchiveFiles(gitMetadata) {
+async function sourceArchiveFiles(gitMetadata, policy) {
   let files;
   if (gitMetadata != null) {
     const output = run(
@@ -203,6 +209,10 @@ async function sourceArchiveFiles(gitMetadata) {
         !parts.includes(".DS_Store") && !parts.some((part) => excludedDirectoryNames.has(part))
       );
     })
+    .filter((relativePath) => {
+      const archivePath = relativePath.replaceAll("\\", "/");
+      return !policy.sourceArchiveExcludedPrefixes.some((prefix) => archivePath.startsWith(prefix));
+    })
     .sort();
 }
 
@@ -233,7 +243,7 @@ function verifyPackageMetadata(packageText, lockText, policy, label) {
 async function verifySourceProvenance(policy, gitMetadata) {
   const trackedFiles = (
     gitMetadata == null
-      ? await sourceArchiveFiles(null)
+      ? await sourceArchiveFiles(null, policy)
       : run("git", ["ls-files", "-z"], { stdio: "pipe" }).split("\0").filter(Boolean)
   ).map((entry) => entry.replaceAll("\\", "/"));
 
@@ -254,6 +264,11 @@ async function verifySourceProvenance(policy, gitMetadata) {
   for (const relativePath of policy.requiredNotices) {
     if (!(await stat(path.join(repositoryDirectory, relativePath))).isFile()) {
       throw new Error(`Required upstream notice is missing: ${relativePath}`);
+    }
+  }
+  for (const [relativePath, expectedHash] of Object.entries(policy.reviewedSourceSha256)) {
+    if ((await sha256(path.join(repositoryDirectory, relativePath))) !== expectedHash) {
+      throw new Error(`Reviewed neutralized source asset changed: ${relativePath}`);
     }
   }
 
@@ -279,6 +294,30 @@ async function verifyBuildProvenance(policy) {
   for (const relativePath of policy.forbiddenArtifactPaths) {
     if (buildFiles.includes(relativePath)) {
       throw new Error(`Fork build contains forbidden upstream brand asset: ${relativePath}`);
+    }
+  }
+  const packagedImages = buildFiles.filter((entry) => entry.startsWith("images/")).sort();
+  if (!isDeepStrictEqual(packagedImages, [...policy.allowedArtifactImagePaths].sort())) {
+    throw new Error(
+      `Fork build image inventory differs from the reviewed fork assets: ${JSON.stringify(packagedImages)}`,
+    );
+  }
+  for (const [fileName, expectedHash] of Object.entries(policy.reviewedForkIconSha256)) {
+    if ((await sha256(path.join(buildDirectory, "images", fileName))) !== expectedHash) {
+      throw new Error(`Fork build contains an unreviewed icon: ${fileName}`);
+    }
+  }
+  for (const [extension, expectedHash] of Object.entries(policy.reviewedIconFontSha256)) {
+    const matches = buildFiles.filter(
+      (entry) => entry.startsWith("popup/fonts/bwi-font.") && path.extname(entry) === extension,
+    );
+    if (
+      matches.length !== 1 ||
+      (await sha256(path.join(buildDirectory, matches[0]))) !== expectedHash
+    ) {
+      throw new Error(
+        `Fork build ${extension} icon font differs from the reviewed shield-free font.`,
+      );
     }
   }
 
@@ -367,7 +406,11 @@ async function verifyArchivePaths(archivePath, policy, archiveKind) {
   const archiveFiles = readArchiveFiles(archivePath);
   const forbiddenPaths =
     archiveKind === "source"
-      ? [...policy.forbiddenTrackedPrefixes, ...policy.forbiddenSourcePaths]
+      ? [
+          ...policy.forbiddenTrackedPrefixes,
+          ...policy.forbiddenSourcePaths,
+          ...policy.sourceArchiveExcludedPrefixes,
+        ]
       : policy.forbiddenArtifactPaths;
   for (const forbiddenPath of forbiddenPaths) {
     const match = archiveFiles.find(
@@ -416,12 +459,12 @@ function zipTimestamp(epoch) {
   );
 }
 
-async function createSourceArchive(archivePath, revision, gitMetadata) {
+async function createSourceArchive(archivePath, revision, gitMetadata, policy) {
   const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "vaultwarden-companion-source-"));
   const stagingDirectory = path.join(temporaryRoot, "vaultwarden-companion-source");
   await mkdir(stagingDirectory, { recursive: true });
   try {
-    for (const relativePath of await sourceArchiveFiles(gitMetadata)) {
+    for (const relativePath of await sourceArchiveFiles(gitMetadata, policy)) {
       await copySourceFile(stagingDirectory, relativePath);
     }
 
@@ -589,7 +632,12 @@ async function main() {
   await cp(path.join(browserDirectory, "dist/fork-dist-firefox.zip"), artifactPath);
 
   const sourceDateEpoch = Number(process.env.SOURCE_DATE_EPOCH ?? sourceRevision.sourceDateEpoch);
-  await createSourceArchive(sourceArchivePath, { ...sourceRevision, sourceDateEpoch }, gitMetadata);
+  await createSourceArchive(
+    sourceArchivePath,
+    { ...sourceRevision, sourceDateEpoch },
+    gitMetadata,
+    provenancePolicy,
+  );
   provenance.packageFiles = await verifyArchivePaths(artifactPath, provenancePolicy, "package");
   const matchedPackageFiles = await verifyPackageMatchesBuild(artifactPath);
   if (matchedPackageFiles !== provenance.packageFiles) {

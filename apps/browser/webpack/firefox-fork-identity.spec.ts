@@ -9,6 +9,7 @@ import { replaceIdentity } from "./firefox-fork-html-identity-plugin";
 import {
   FIREFOX_FORK_DATA_COLLECTION_PERMISSIONS,
   FIREFOX_FORK_MIN_VERSION,
+  FORK_IDENTITY_MESSAGE_KEYS,
   OFFICIAL_FIREFOX_GECKO_ID,
   REQUIRED_ICON_FILES,
   load,
@@ -155,16 +156,12 @@ describe("Firefox fork identity", () => {
     );
   });
 
-  it("rejects copied official Bitwarden icons", () => {
-    const configPath = writeIdentity();
-    fs.copyFileSync(
-      path.join(browserDirectory, "src/images/icon16.png"),
-      path.join(temporaryDirectory, "icons/icon16.png"),
-    );
+  it("rejects the upstream source icon directory", () => {
+    const configPath = writeIdentity({
+      iconsDirectory: path.join(browserDirectory, "src/images"),
+    });
 
-    expect(() => load(configPath, "firefox", browserDirectory)).toThrow(
-      '"icon16.png" must not reuse the official Bitwarden icon',
-    );
+    expect(() => load(configPath, "firefox", browserDirectory)).toThrow("must provide fork assets");
   });
 
   it("rejects upstream identity in descriptions and canonical hostnames", () => {
@@ -321,7 +318,7 @@ describe("Firefox fork identity", () => {
     expect(() => verify(buildDirectory)).toThrow("must use a non-official Gecko ID");
   });
 
-  it.each(["en", "fr"])("replaces only identity messages in the %s locale", (locale) => {
+  it.each(["en", "fr", "bg"])("replaces fork identity messages in the %s locale", (locale) => {
     const identity = load(writeIdentity(), "firefox", browserDirectory);
     const source = fs.readFileSync(
       path.join(browserDirectory, "src/_locales", locale, "messages.json"),
@@ -329,6 +326,11 @@ describe("Firefox fork identity", () => {
     const original = JSON.parse(source.toString()) as LocaleMessages;
 
     const built = JSON.parse(transformLocale(identity)(source)) as LocaleMessages;
+    const builtEnglish = JSON.parse(
+      transformLocale(identity)(
+        fs.readFileSync(path.join(browserDirectory, "src/_locales/en/messages.json")),
+      ),
+    ) as LocaleMessages;
 
     expect(built.appName.message).toBe(identity.name);
     expect(built.appLogoLabel.message).toBe(identity.logoLabel);
@@ -341,6 +343,18 @@ describe("Firefox fork identity", () => {
     expect(built.continueToWebAppDesc.message).toBe(
       "Open more account features on your selected server's web app.",
     );
+    expect(built.downloadDiagnosticReportWith.message).toBe(
+      "Download the diagnostic report before sharing it with your server administrator or support provider.",
+    );
+    expect(built.awaitDesktopDesc.message).toContain("compatible desktop app");
+    expect(FORK_IDENTITY_MESSAGE_KEYS).toHaveLength(125);
+    for (const key of FORK_IDENTITY_MESSAGE_KEYS) {
+      expect(built[key].message).toBe(builtEnglish[key].message);
+    }
+    expect(built.introCarouselLabel.message).toBe(`Welcome to ${identity.name}`);
+    expect(built.totpHelper.message).toContain(identity.name);
+    expect(built.introCarouselLabel.message).not.toContain("Битуорден");
+    expect(Object.values(built).some((value) => /bitwarden/i.test(value.message))).toBe(false);
     expect(built.addItem).toEqual(original.addItem);
   });
 });

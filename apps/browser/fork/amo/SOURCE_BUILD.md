@@ -36,13 +36,22 @@ Provenance checks in this branch now enforce that release inputs and emitted art
 
 - `bitwarden_license/*` tracked source,
 - `@bitwarden/commercial-sdk-internal` dependency declarations and lock entries,
-- `popup/images/logo-dark@2x.png` and `popup/images/logo-white@2x.png` in the fork XPI,
+- upstream wordmarks and all unreviewed files under the XPI's `images/` directory,
+- the Bitwarden shield glyph and its CSS selectors from the emitted icon fonts,
+- user-visible Bitwarden identity in every packaged locale message. The 125 messages that carry
+  upstream identity in at least one source locale use reviewed neutral English wording until
+  independent fork translations are available,
+- upstream contact, product, download, welcome, and official-store links blocked by the policy,
 
-while preserving required attribution paths and notices. `@bitwarden/sdk-internal` and other `@bitwarden/*`
-modules remain upstream OSS dependencies in the build.
+while preserving required attribution paths and notices. The policy pins the exact reviewed fork
+icon hashes, shield-free font hashes, neutralized legacy SVG export hashes, GPL SDK version, license,
+repository, and WebAssembly hash. `@bitwarden/sdk-internal` and other `@bitwarden/*` modules remain
+upstream OSS dependencies in the build.
 
 The source archive intentionally excludes generated output, caches, `node_modules`, coverage data,
-and non-browser application source. It includes `apps/browser`, the shared `libs` used by the browser
-build, root package/configuration files, root build scripts, and `SOURCE_REVISION.json`. The original
-archive inputs come from Git's tracked and non-ignored file list, so ignored local files and secrets
-cannot enter the upload. A rebuild from the archive enumerates only those allowlisted paths.
+and non-browser application source. It also excludes the browser store-material, Safari, and
+upstream image trees because the Firefox fork build does not consume them. It includes the remaining
+`apps/browser` source, the shared `libs` used by the browser build, root package/configuration files,
+root build scripts, and `SOURCE_REVISION.json`. The original archive inputs come from Git's tracked
+and non-ignored file list, so ignored local files and secrets cannot enter the upload. A rebuild from
+the archive enumerates only those allowlisted paths.
