@@ -290,10 +290,8 @@ export class AutofillOverlayContentService implements AutofillOverlayContentServ
 
   refreshMenuLayerPosition = () => this.inlineMenuContentService?.refreshTopLayerPosition();
 
-  getOwnedInlineMenuTagNames = () => this.inlineMenuContentService?.getOwnedTagNames() || [];
-
   isElementInlineMenu = (element: Element): boolean =>
-    this.inlineMenuContentService?.isElementInlineMenu(element as HTMLElement) ?? false;
+    this.inlineMenuContentService?.isElementInlineMenu(element) ?? false;
 
   getUnownedTopLayerItems = (includeCandidates?: boolean) =>
     this.inlineMenuContentService?.getUnownedTopLayerItems(includeCandidates);
@@ -480,7 +478,8 @@ export class AutofillOverlayContentService implements AutofillOverlayContentServ
       const memoIndex = this.getFormFieldHandlerMemoIndex(formFieldElement, event);
       const existingHandler = this.eventHandlersMemo[memoIndex];
       if (!existingHandler) {
-        return;
+        // continue, not return: a missing memo for one event must not skip the others.
+        continue;
       }
 
       formFieldElement.removeEventListener(event, existingHandler);

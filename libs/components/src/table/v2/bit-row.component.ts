@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, forwardRef, inject } from "@angular/core";
 
+import { HoverRevealContainerDirective } from "../../hover-reveal";
+
 import { BitTableV2Component } from "./table-v2.component";
 
 /**
@@ -17,6 +19,11 @@ import { BitTableV2Component } from "./table-v2.component";
  * - In manual mode (no `<bit-column>`), `grid-template-columns` is unset and
  *   the row falls back to `grid-auto-flow: column; grid-auto-columns: 1fr`
  *   so projected `<bit-cell>` children each get an equal share.
+ *
+ * In `list`, `<bit-table-v2>` wraps the row in a `<bit-item>` that owns the chrome.
+ *
+ * The row is a `bitHoverRevealContainer`, so `bitHoverReveal` elements in its cells show on row
+ * hover or focus.
  */
 @Component({
   selector: "bit-row",
@@ -27,6 +34,7 @@ import { BitTableV2Component } from "./table-v2.component";
     "[style.grid-template-columns]": "gridTemplateColumns()",
     "[style.height.px]": "fixedHeight()",
   },
+  hostDirectives: [HoverRevealContainerDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BitRowComponent {
@@ -37,41 +45,28 @@ export class BitRowComponent {
 
   protected readonly gridTemplateColumns = computed(() => this.table?.gridTemplateColumns());
 
+  private readonly isList = computed(() => this.table?.presentation() === "list");
+
   /** Virtualized rows are positioned by offset, so they must render at exactly the height the scroll strategy assumed. */
   protected readonly fixedHeight = computed(() =>
-    this.table?.presentation() === "list" ? undefined : this.table?.virtualRowHeight(),
+    this.isList() ? undefined : this.table?.virtualRowHeight(),
   );
 
-  /**
-   * Row chrome. The grid classes lay the cells out in both presentations; the
-   * rest is presentation-specific: `table` connects rows with a bottom divider,
-   * `list` renders each row as a standalone `bit-item`-style card (background,
-   * rounded corners, spacing, hover).
-   */
+  /** Row chrome. Grid in both presentations; the rest is `table`-only. */
   protected readonly hostClasses = computed(() =>
     [
-      // `group/row` lets cell templates reveal row-hover affordances (e.g. quick
-      // copy/launch actions) with `group-hover/row:*`. Rows don't nest, so the
-      // shared group name scopes to each row's own subtree without collisions.
+      // `group/row` lets cell templates style on row hover with `group-hover/row:*`. Rows don't
+      // nest, so the shared group name scopes to each row's own subtree. To show actions on row
+      // hover, prefer `bitHoverReveal`.
       "tw-group/row",
       "tw-grid",
       "tw-grid-flow-col",
       "tw-auto-cols-fr",
-      // A fixed height can't absorb a tall cell, so clip it rather than let it overlap the next row.
-      ...(this.fixedHeight() != null ? ["tw-overflow-clip"] : []),
-      ...(this.table?.presentation() === "list"
-        ? // `list` rows size to content off a `bit-item`-style minimum height.
-          [
-            "tw-min-h-9",
-            "tw-mb-1.5",
-            "tw-rounded-lg",
-            "tw-bg-background",
-            "tw-border-0",
-            "tw-border-b",
-            "tw-border-solid",
-            "tw-border-b-shadow",
-            "hover:tw-bg-hover-default",
-          ]
+      // If the row is fixed height, tall cell overflow should be clipped and the row should not
+      // expand its height to fit the tall cell's content
+      ...(this.fixedHeight() != null ? ["tw-grid-rows-1", "tw-overflow-clip"] : []),
+      ...(this.isList()
+        ? ["tw-w-full", "tw-min-w-0"]
         : [
             // Omitted when virtualized: a min-height would clamp a `virtualRowHeight`
             // below it, breaking the offsets the scroll strategy positions rows at.

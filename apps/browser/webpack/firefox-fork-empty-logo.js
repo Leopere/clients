@@ -1,1 +1,1 @@
-module.exports = { BitwardenLogo: undefined };
+module.exports = { BitwardenLogo: undefined, BitwardenLogoBeta: undefined };

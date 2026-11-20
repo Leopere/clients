@@ -77,6 +77,8 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
   private isMonitoring = false;
   private pendingAttributeMutations: Map<Element, Set<string>> = new Map();
   private pendingTopLayerTargets: Set<Element> = new Set();
+  // Attach the "toggle" listener at most once per element; WeakSet lets detached nodes GC.
+  private topLayerListenedElements = new WeakSet<Element>();
   private pendingChildListUpdate = false;
   private lastDetachedPurgeAt = -Infinity;
   private readonly detachedPurgeThrottleMs = 1000;
@@ -85,14 +87,21 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
   private readonly overlaySetupDelayMs = 100;
   // Constructed in the constructor body, not here: it closes over a field declared further down.
   private readonly shadowTracker: ShadowHostHydrationTracker;
-  private ownedExperienceTagNames: string[] = [];
   private readonly updateAfterMutationTimeout = 1000;
   private readonly shadowDomCheckDebounceMs = 300;
   private lastMutationTimestamp = 0;
   private mutationBurstCount = 0;
   private readonly mutationCooldownMs = 500;
   private readonly maxMutationWaitMs = 5000;
-  private readonly formFieldQueryString;
+  private formFieldQueryString;
+  /**
+   * Opt-in state for the page-controlled `data-bwignore` and `data-bwautofill`
+   * attributes. Both stay `false` until {@link attributeSettingsFetched} resolves,
+   * so an unanswered or failed fetch leaves the attributes unhonored.
+   */
+  private honorBitwardenIgnoreAttribute = false;
+  private honorBitwardenAutofillAttribute = false;
+  private readonly attributeSettingsFetched: Promise<void>;
 
   private readonly nonInputFormFieldTags = new Set(["textarea", "select"]);
   private readonly ignoredInputTypes = new Set([
@@ -118,11 +127,8 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     private domQueryService: DomQueryService,
     private autofillOverlayContentService?: AutofillOverlayContentService,
   ) {
-    let inputQuery = "input:not([data-bwignore])";
-    for (const type of this.ignoredInputTypes) {
-      inputQuery += `:not([type="${type}"])`;
-    }
-    this.formFieldQueryString = `${inputQuery}, textarea:not([data-bwignore]), select:not([data-bwignore]), span[data-bwautofill]`;
+    this.formFieldQueryString = this.buildFormFieldQueryString();
+    this.attributeSettingsFetched = this.fetchAndSetBitwardenAttributeSettings();
 
     this.mutationObserver = new MutationObserver(this.handleMutationObserverMutation);
     this.intersectionObserver = new IntersectionObserver(this.handleFormElementIntersection, {
@@ -146,6 +152,53 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
   }
 
   /**
+   * Builds the selector used to find candidate form fields. The page-controlled
+   * `data-bwignore` and `data-bwautofill` attributes are only considered when
+   * the user has opted into honoring them.
+   */
+  private buildFormFieldQueryString(): string {
+    const ignoreAttributeFilter = this.honorBitwardenIgnoreAttribute ? ":not([data-bwignore])" : "";
+
+    let inputQuery = `input${ignoreAttributeFilter}`;
+    for (const type of this.ignoredInputTypes) {
+      inputQuery += `:not([type="${type}"])`;
+    }
+
+    const selectors = [
+      inputQuery,
+      `textarea${ignoreAttributeFilter}`,
+      `select${ignoreAttributeFilter}`,
+    ];
+
+    if (this.honorBitwardenAutofillAttribute) {
+      selectors.push("span[data-bwautofill]");
+    }
+
+    return selectors.join(", ");
+  }
+
+  /**
+   * Reads the Bitwarden-attribute opt-in settings once per content-script lifetime.
+   * A change to either setting takes effect on the next page load.
+   */
+  private async fetchAndSetBitwardenAttributeSettings(): Promise<void> {
+    let settings;
+    try {
+      settings = (await this.sendExtensionMessage("getBitwardenAutofillAttributeSettings"))?.result;
+    } catch {
+      return;
+    }
+
+    if (!settings) {
+      return;
+    }
+
+    this.honorBitwardenIgnoreAttribute = settings.honorBitwardenIgnoreAttribute === true;
+    this.honorBitwardenAutofillAttribute = settings.honorBitwardenAutofillAttribute === true;
+    this.formFieldQueryString = this.buildFormFieldQueryString();
+  }
+
+  /**
    * Attaches the mutation observer to the document. The intersection
    * observer is allocated at construction; it attaches per-field as
    * fields are cached during page-details collection. Idempotent.
@@ -163,6 +216,7 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
       childList: true,
       subtree: true,
     });
+    document.addEventListener("transitionend", this.handleOpacityTransitionEnd, true);
   }
 
   /**
@@ -178,11 +232,8 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     this.pendingOverlaySetup.forEach((timeout) => globalThis.clearTimeout(timeout));
     this.pendingOverlaySetup.clear();
     this.mutationObserver.disconnect();
-    this.intersectionObserver.disconnect();
-    this._autofillFormElements.clear();
-    this.autofillFieldElements.clear();
-    this.autofillFieldsByOpid.clear();
-    this.elementInitializingIntersectionObserver.clear();
+    document.removeEventListener("transitionend", this.handleOpacityTransitionEnd, true);
+    this.clearFieldCache();
     // Shadow-host tracking is monitoring-scoped; clear it so restart drops stale deadlines.
     this.shadowTracker.reset();
     this.noFieldsFound = false;
@@ -204,6 +255,15 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     }
   };
 
+  /** Clears the field cache. */
+  private clearFieldCache() {
+    this.intersectionObserver.disconnect();
+    this._autofillFormElements.clear();
+    this.autofillFieldElements.clear();
+    this.autofillFieldsByOpid.clear();
+    this.elementInitializingIntersectionObserver.clear();
+  }
+
   /**
    * Builds the data for all forms and fields found within the page DOM.
    * Sets up a mutation observer to verify DOM changes and returns early
@@ -216,6 +276,8 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     if (this.autofillOverlayContentService) {
       this.setupInitialTopLayerListeners();
     }
+
+    await this.attributeSettingsFetched;
 
     // Check for targeting rules before running heuristic collection
     if (this.pageTargetingRules === undefined) {
@@ -237,7 +299,7 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     }
 
     if (!this.domRecentlyMutated && this.autofillFieldElements.size) {
-      this.updateCachedAutofillFieldVisibility();
+      await this.updateCachedAutofillFieldVisibility();
 
       return this.getFormattedPageDetails(
         this.getFormattedAutofillFormsData(),
@@ -583,15 +645,17 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
    *
    * @private
    */
-  private updateCachedAutofillFieldVisibility() {
-    this.autofillFieldElements.forEach(async (autofillField, element) => {
-      const previouslyViewable = autofillField.viewable;
-      autofillField.viewable = await this.domElementVisibilityService.isElementViewable(element);
+  private async updateCachedAutofillFieldVisibility() {
+    await Promise.all(
+      Array.from(this.autofillFieldElements, async ([element, autofillField]) => {
+        const previouslyViewable = autofillField.viewable;
+        autofillField.viewable = await this.domElementVisibilityService.isElementViewable(element);
 
-      if (!previouslyViewable && autofillField.viewable) {
-        this.setupOverlayOnField(element, autofillField);
-      }
-    });
+        if (!previouslyViewable && autofillField.viewable) {
+          this.setupOverlayOnField(element, autofillField);
+        }
+      }),
+    );
   }
 
   /**
@@ -805,6 +869,9 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     if (index >= 0 && existingAutofillField) {
       existingAutofillField.opid = element.opid;
       existingAutofillField.elementNumber = index;
+      // A cached field may have been shown or hidden since it was first collected.
+      existingAutofillField.viewable =
+        await this.domElementVisibilityService.isElementViewable(element);
       this.autofillFieldElements.set(element, existingAutofillField);
 
       return existingAutofillField;
@@ -1409,12 +1476,15 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     const nodeTagName = element.tagName.toLowerCase();
 
     const nodeIsSpanElementWithAutofillAttribute =
-      nodeTagName === "span" && element.hasAttribute("data-bwautofill");
+      this.honorBitwardenAutofillAttribute &&
+      nodeTagName === "span" &&
+      element.hasAttribute("data-bwautofill");
     if (nodeIsSpanElementWithAutofillAttribute) {
       return true;
     }
 
-    const nodeHasBwIgnoreAttribute = element.hasAttribute("data-bwignore");
+    const nodeHasBwIgnoreAttribute =
+      this.honorBitwardenIgnoreAttribute && element.hasAttribute("data-bwignore");
     const nodeIsValidInputElement =
       nodeTagName === "input" && !this.ignoredInputTypes.has((element as HTMLInputElement).type);
     if (nodeIsValidInputElement && !nodeHasBwIgnoreAttribute) {
@@ -1507,6 +1577,14 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
           if (this.shouldListenToTopLayerCandidate(node)) {
             this.pendingTopLayerTargets.add(node);
           }
+          // A popover or dialog nested under a non-candidate added node is still promoted to
+          // the top layer, so it can obscure the inline menu. The added node itself is the only
+          // thing checked above, so walk its descendants to register nested candidates too.
+          for (const descendant of node.querySelectorAll("[popover], dialog")) {
+            if (this.shouldListenToTopLayerCandidate(descendant)) {
+              this.pendingTopLayerTargets.add(descendant);
+            }
+          }
         }
       }
     }
@@ -1536,9 +1614,7 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
     // time; the new URL must re-fetch to pick up rule and gate changes.
     this.pageTargetingRules = undefined;
 
-    this._autofillFormElements.clear();
-    this.autofillFieldElements.clear();
-    this.autofillFieldsByOpid.clear();
+    this.clearFieldCache();
 
     // Reset shadow root tracking on navigation
     this.domQueryService.resetObservedShadowRoots();
@@ -1682,21 +1758,20 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
   private setupTopLayerCandidateListener = (element: Element) => {
     const overlayService = this.autofillOverlayContentService;
     if (overlayService !== undefined) {
-      const ownedTags = overlayService.getOwnedInlineMenuTagNames() || [];
-      this.ownedExperienceTagNames = ownedTags;
-
-      if (!ownedTags.includes(element.tagName)) {
-        const toggleListener = (event: Event) => {
-          if ((event as ToggleEvent).newState === "open") {
-            // Add a slight delay (but faster than a user's reaction), to ensure the layer
-            // positioning happens after any triggered toggle has completed.
-            setTimeout(() => {
-              overlayService.refreshMenuLayerPosition();
-            }, 100);
-          }
-        };
-        element.addEventListener("toggle", toggleListener);
-
+      if (!overlayService.isElementInlineMenu(element)) {
+        if (!this.topLayerListenedElements.has(element)) {
+          this.topLayerListenedElements.add(element);
+          const toggleListener = (event: Event) => {
+            if ((event as ToggleEvent).newState === "open") {
+              // Add a slight delay (but faster than a user's reaction), to ensure the layer
+              // positioning happens after any triggered toggle has completed.
+              setTimeout(() => {
+                overlayService.refreshMenuLayerPosition();
+              }, 100);
+            }
+          };
+          element.addEventListener("toggle", toggleListener);
+        }
         overlayService.refreshMenuLayerPosition();
       }
     }
@@ -1710,7 +1785,8 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
 
   private shouldListenToTopLayerCandidate = (element: Element) => {
     return (
-      !this.ownedExperienceTagNames.includes(element.tagName) &&
+      // Excluded by element identity, since Firefox renders the inline menu as plain `div`s
+      !this.autofillOverlayContentService?.isElementInlineMenu(element) &&
       (element.tagName === "DIALOG" ||
         Array.from(element.attributes || []).some((attribute) =>
           this.isPopoverAttribute(attribute.name),
@@ -1923,6 +1999,35 @@ export class CollectAutofillContentService implements CollectAutofillContentServ
       this.setupOverlayOnField(formFieldElement, cachedAutofillFieldElement);
 
       this.intersectionObserver.unobserve(entry.target);
+    }
+  };
+
+  /**
+   * Handles the end of an opacity transition. Re-evaluates the visibility of non-viewable
+   * fields within the transitioned element, as a field collected while fading in will not
+   * trigger the IntersectionObserver once it becomes visible.
+   *
+   * @param event - The transitionend event
+   */
+  private handleOpacityTransitionEnd = async (event: TransitionEvent) => {
+    const target = event.target;
+    if (event.propertyName !== "opacity" || !(target instanceof Element)) {
+      return;
+    }
+
+    for (const [formFieldElement, autofillField] of this.autofillFieldElements) {
+      if (
+        autofillField.viewable ||
+        !target.contains(formFieldElement) ||
+        !(await this.domElementVisibilityService.isElementViewable(formFieldElement))
+      ) {
+        continue;
+      }
+
+      autofillField.viewable = true;
+      this.setupOverlayOnField(formFieldElement, autofillField);
+
+      this.intersectionObserver.unobserve(formFieldElement);
     }
   };
 

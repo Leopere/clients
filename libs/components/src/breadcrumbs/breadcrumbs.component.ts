@@ -5,17 +5,20 @@ import {
   Component,
   computed,
   contentChildren,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
   input,
   viewChild,
+  ViewContainerRef,
 } from "@angular/core";
 import { RouterModule } from "@angular/router";
 
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { I18nPipe } from "@bitwarden/ui-common";
 
+import { HeaderContext } from "../header/header-context";
 import { IconModule } from "../icon";
 import { IconButtonModule } from "../icon-button";
 import { MenuModule } from "../menu";
@@ -31,6 +34,9 @@ import { BreadcrumbComponent } from "./breadcrumb.component";
 
 /** Approximate width reserved for the trailing separator arrow (icon + margins), per size, in pixels. */
 const TRAILING_ARROW_RESERVE_PX = { base: 48, small: 34 } as const;
+
+/** Space between the promoted heading and the header's title suffix (`tw-ms-1`), in pixels. */
+const TITLE_SUFFIX_GAP_PX = 4;
 
 /**
  * Breadcrumbs are used to help users understand where they are in a products navigation. Typically
@@ -54,32 +60,43 @@ const TRAILING_ARROW_RESERVE_PX = { base: 48, small: 34 } as const;
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: "tw-flex tw-items-center",
+    class: "tw-flex tw-items-center tw-w-full tw-min-w-0",
     role: "navigation",
     "[attr.aria-label]": "ariaLabel",
   },
 })
 export class BreadcrumbsComponent {
   private readonly i18nService = inject(I18nService);
+  private readonly headerContext = inject(HeaderContext, { optional: true });
+
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly ariaLabel = this.i18nService.t("breadcrumbs");
 
   /** Live width of the host element, observed from a stable ancestor. */
   private readonly hostWidth = observedWidth(this.hostRef);
 
+  private readonly titleSuffixEl =
+    viewChild.required<ElementRef<HTMLElement>>("titleSuffixContainer");
+
+  /** Live width of the header's title suffix rendered after a promoted heading; 0 when absent. */
+  private readonly titleSuffixWidth = observedWidth(this.titleSuffixEl);
+
+  private readonly titleSuffixOutlet = viewChild("titleSuffixOutlet", { read: ViewContainerRef });
+
   /**
    * Width handed to the overflow list. Derived from the host rather than letting the list
    * observe its own element: the list host is content-sized (it shrinks as items hide), so
    * self-observation would feed the packing decision back into its own input and, once
    * collapsed, never re-expand. Reserve room for the trailing arrow when it's shown; the arrow
-   * shrinks with `size`, so the reserve tracks it too.
+   * shrinks with `size`, so the reserve tracks it too. Likewise reserve room for the header's
+   * title suffix when it follows a promoted heading.
    */
-  protected readonly availableWidth = computed(() =>
-    Math.max(
-      0,
-      this.hostWidth() - (this.showTrailingArrow() ? TRAILING_ARROW_RESERVE_PX[this.size()] : 0),
-    ),
-  );
+  protected readonly availableWidth = computed(() => {
+    const arrowReserve = this.showTrailingArrow() ? TRAILING_ARROW_RESERVE_PX[this.size()] : 0;
+    const suffixWidth = this.titleSuffixWidth();
+    const suffixReserve = suffixWidth > 0 ? suffixWidth + TITLE_SUFFIX_GAP_PX : 0;
+    return Math.max(0, this.hostWidth() - arrowReserve - suffixReserve);
+  });
 
   /**
    * The size of the breadcrumb text and icons. Defaults to "base" size.
@@ -101,6 +118,15 @@ export class BreadcrumbsComponent {
   private readonly overflowList = viewChild.required(OverflowListDirective);
 
   constructor() {
+    if (this.headerContext) {
+      this.headerContext.registerPromotedHeading(this.displayActiveAsHeader);
+      this.headerContext.registerTitleSuffixOutlet(this.titleSuffixOutlet);
+      inject(DestroyRef).onDestroy(() => {
+        this.headerContext?.unregisterPromotedHeading(this.displayActiveAsHeader);
+        this.headerContext?.unregisterTitleSuffixOutlet(this.titleSuffixOutlet);
+      });
+    }
+
     // Push our size down to each child crumb so they can size projected icon tiles in step.
     effect(() => {
       const size = this.size();
@@ -116,6 +142,25 @@ export class BreadcrumbsComponent {
       this.overflowList().remeasure({ reset: true });
     });
   }
+
+  protected readonly activeBreadcrumb = computed(() => {
+    const result = this.breadcrumbs().find((breadcrumb) => breadcrumb.isActiveRoute());
+
+    return result;
+  });
+
+  /**
+   * Display the active breadcrumb as a semantic header element when HeaderContext says to do so,
+   * and there is an active breadcrumb available
+   *
+   * (after VFO1 flag is removed, update this to check for the existence of HeaderContext instead
+   * of the check for promoteActiveBreadcrumb, which is solely a VFO1 flag gate)
+   */
+  protected readonly displayActiveAsHeader = computed(
+    () =>
+      (this.headerContext?.promoteActiveBreadcrumb() ?? false) &&
+      this.activeBreadcrumb() != undefined,
+  );
 
   protected readonly baseStyles = [
     "tw-inline-block",

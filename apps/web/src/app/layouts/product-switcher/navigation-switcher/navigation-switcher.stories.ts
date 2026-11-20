@@ -1,4 +1,4 @@
-import { Component, Directive, importProvidersFrom, Input } from "@angular/core";
+import { Component, Directive, importProvidersFrom, Input, signal } from "@angular/core";
 import { provideNoopAnimations } from "@angular/platform-browser/animations";
 import { RouterModule } from "@angular/router";
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from "@storybook/angular";
@@ -7,20 +7,24 @@ import { BehaviorSubject, Observable, of } from "rxjs";
 import { PasswordManagerLogo, SideNavLogo } from "@bitwarden/assets/svg";
 import { OrganizationService } from "@bitwarden/common/admin-console/abstractions/organization/organization.service.abstraction";
 import { PolicyService } from "@bitwarden/common/admin-console/abstractions/policy/policy.service.abstraction";
-import { ProviderService } from "@bitwarden/common/admin-console/abstractions/provider.service";
 import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
-import { Provider } from "@bitwarden/common/admin-console/models/domain/provider";
 import { AccountService, Account } from "@bitwarden/common/auth/abstractions/account.service";
+import { AvatarService } from "@bitwarden/common/auth/abstractions/avatar.service";
+import { LogoutService } from "@bitwarden/common/auth/logout";
 import { BillingAccountProfileStateService } from "@bitwarden/common/billing/abstractions";
 import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
+import {
+  VaultTimeoutAction,
+  VaultTimeoutSettingsService,
+} from "@bitwarden/common/key-management/vault-timeout";
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { PlatformUtilsService } from "@bitwarden/common/platform/abstractions/platform-utils.service";
 import { SyncService } from "@bitwarden/common/platform/sync";
+import { ProviderService, Provider } from "@bitwarden/common/provider";
 import { UserId } from "@bitwarden/common/types/guid";
 import {
   BadgeComponent,
   BerryComponent,
-  CalloutComponent,
   I18nMockService,
   IconTileComponent,
   LayoutComponent,
@@ -28,11 +32,19 @@ import {
   StorybookGlobalStateProvider,
 } from "@bitwarden/components";
 // eslint-disable-next-line no-restricted-imports
-import { positionFixedWrapperDecorator } from "@bitwarden/components/src/stories/storybook-decorators";
+import {
+  collapsedSideNavDecorator,
+  positionFixedWrapperDecorator,
+} from "@bitwarden/components/src/stories/storybook-decorators";
 import { GlobalStateProvider } from "@bitwarden/state";
 import { enabledFlags } from "@bitwarden/storybook";
 import { I18nPipe } from "@bitwarden/ui-common";
+import { LockService } from "@bitwarden/unlock";
+import { CoachmarkService } from "@bitwarden/vault";
 
+import { UpgradeFlowService } from "../../../billing/individual/upgrade/services/upgrade-flow.service";
+import { UpgradeCalloutComponent } from "../../../billing/individual/upgrade/upgrade-nav-button/upgrade-callout/upgrade-callout.component";
+import { AccountMenuComponent } from "../../header/account-menu.component";
 import { ProductSwitcherService } from "../shared/product-switcher.service";
 
 import { NavigationProductSwitcherComponent } from "./navigation-switcher.component";
@@ -103,11 +115,46 @@ class MockPlatformUtilsService implements Partial<PlatformUtilsService> {
   }
 }
 
+class MockVaultTimeoutSettingsService implements Partial<VaultTimeoutSettingsService> {
+  availableVaultTimeoutActions$() {
+    return of([VaultTimeoutAction.Lock]);
+  }
+}
+
+class MockLogoutService implements Partial<LogoutService> {
+  async logout(): Promise<undefined> {
+    return undefined;
+  }
+}
+
+class MockLockService implements Partial<LockService> {
+  async lock() {}
+}
+
+class MockAvatarService implements Partial<AvatarService> {
+  avatarColor$ = of("#175ddc");
+}
+
 class MockBillingAccountProfileStateService implements Partial<BillingAccountProfileStateService> {
   hasPremiumFromAnySource$(userId: UserId): Observable<boolean> {
     return of(false);
   }
 }
+
+const mockCoachmarkService: Partial<CoachmarkService> = {
+  activeStepId: signal(null),
+  currentStepNumber: signal(0),
+  totalSteps: signal(0),
+  isRunning: signal(false),
+  isStepActive: () => false,
+  getStepPosition: () => undefined,
+  getStepTitle: () => "",
+  getStepDescription: () => "",
+  getStepLearnMoreUrl: () => undefined,
+  previousStep: () => Promise.resolve(),
+  nextStep: () => Promise.resolve(),
+  completeTour: () => Promise.resolve(),
+};
 
 // FIXME(https://bitwarden.atlassian.net/browse/CL-764): Migrate to OnPush
 // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection
@@ -120,6 +167,7 @@ class StoryContentComponent {}
 
 const translations: Record<string, string> = {
   moreFromBitwarden: "More from Bitwarden",
+  getSecretsManager: "Get Secrets Manager",
   secureYourInfrastructure: "Secure your infrastructure",
   protectYourFamilyOrBusiness: "Protect your family or business",
   switchProducts: "Switch products",
@@ -132,6 +180,16 @@ const translations: Record<string, string> = {
   loading: "Loading",
   sideNavigation: "Side navigation",
   skipLink: "Skip link",
+  upgradeYourPlan: "Upgrade your plan",
+  upgradeNow: "Upgrade now",
+  getAdvancedOnlineSecurityWithBitwardenPremiumCapitalized:
+    "Get advanced online security with Bitwarden Premium.",
+  loggedInAs: "Logged in as",
+  accountSettings: "Account settings",
+  getHelp: "Get help",
+  getApps: "Get the apps",
+  lockNow: "Lock now",
+  logOut: "Log out",
 };
 
 export default {
@@ -146,10 +204,11 @@ export default {
         LayoutComponent,
         I18nPipe,
         NavigationProductSwitcherComponent,
+        AccountMenuComponent,
         BadgeComponent,
         BerryComponent,
         IconTileComponent,
-        CalloutComponent,
+        UpgradeCalloutComponent,
       ],
       providers: [
         { provide: OrganizationService, useClass: MockOrganizationService },
@@ -157,6 +216,11 @@ export default {
         { provide: ProviderService, useClass: MockProviderService },
         { provide: SyncService, useClass: MockSyncService },
         { provide: PlatformUtilsService, useClass: MockPlatformUtilsService },
+        { provide: VaultTimeoutSettingsService, useClass: MockVaultTimeoutSettingsService },
+        { provide: LogoutService, useClass: MockLogoutService },
+        { provide: LockService, useClass: MockLockService },
+        { provide: AvatarService, useClass: MockAvatarService },
+        { provide: CoachmarkService, useValue: mockCoachmarkService },
         {
           provide: BillingAccountProfileStateService,
           useClass: MockBillingAccountProfileStateService,
@@ -172,6 +236,14 @@ export default {
           provide: PolicyService,
           useValue: {
             policyAppliesToUser$: () => of(false),
+          },
+        },
+        {
+          provide: UpgradeFlowService,
+          useValue: {
+            calloutDismissed$: of(false),
+            upgrade: () => Promise.resolve(),
+            dismissCallout: () => Promise.resolve(),
           },
         },
       ],
@@ -212,22 +284,22 @@ const Template: Story = {
             <bit-nav-item text="Export"></bit-nav-item>
           </bit-nav-group>
           <bit-nav-group text="Organizations" icon="bwi-business" [open]="true">
-            <bit-nav-item text="Acme Corp" icon="bwi-collection-shared"></bit-nav-item>
+            <bit-nav-item text="Acme Corp" icon="bwi-shared-folder"></bit-nav-item>
             <bit-nav-item text="Acme Corp — Vault"></bit-nav-item>
             <bit-nav-item text="Acme Corp — Members"></bit-nav-item>
             <bit-nav-item text="Acme Corp — Settings"></bit-nav-item>
-            <bit-nav-item text="My Family" icon="bwi-collection-shared"></bit-nav-item>
+            <bit-nav-item text="My Family" icon="bwi-shared-folder"></bit-nav-item>
             <bit-nav-item text="My Family — Vault"></bit-nav-item>
             <bit-nav-item text="My Family — Members"></bit-nav-item>
-            <bit-nav-item text="Initech" icon="bwi-collection-shared"></bit-nav-item>
+            <bit-nav-item text="Initech" icon="bwi-shared-folder"></bit-nav-item>
             <bit-nav-item text="Initech — Vault"></bit-nav-item>
             <bit-nav-item text="Initech — Members"></bit-nav-item>
             <bit-nav-item text="Initech — Settings"></bit-nav-item>
-            <bit-nav-item text="Umbrella Corp" icon="bwi-collection-shared"></bit-nav-item>
+            <bit-nav-item text="Umbrella Corp" icon="bwi-shared-folder"></bit-nav-item>
             <bit-nav-item text="Umbrella Corp — Vault"></bit-nav-item>
             <bit-nav-item text="Umbrella Corp — Members"></bit-nav-item>
             <bit-nav-item text="Umbrella Corp — Settings"></bit-nav-item>
-            <bit-nav-item text="Stark Industries" icon="bwi-collection-shared"></bit-nav-item>
+            <bit-nav-item text="Stark Industries" icon="bwi-shared-folder"></bit-nav-item>
             <bit-nav-item text="Stark Industries — Vault"></bit-nav-item>
             <bit-nav-item text="Stark Industries — Members"></bit-nav-item>
             <bit-nav-item text="Stark Industries — Settings"></bit-nav-item>
@@ -314,12 +386,12 @@ const RealisticTemplate: StoryObj<
           <bit-nav-item text="Vault" icon="bwi-lock" route="vault"></bit-nav-item>
           <bit-nav-item text="Send" icon="bwi-send" route="send"></bit-nav-item>
           <bit-nav-group text="All items" route="all" [open]="true">
-            
-            <bit-nav-group text="Engineering" icon="bwi-collection-shared" route="eng">
+
+            <bit-nav-group text="Engineering" icon="bwi-shared-folder" route="eng">
               <bit-nav-item text="Frontend" route="eng-fe"></bit-nav-item>
               <bit-nav-item text="Backend" route="eng-be"></bit-nav-item>
             </bit-nav-group>
-            <bit-nav-group text="Operations" icon="bwi-collection-shared" route="ops">
+            <bit-nav-group text="Operations" icon="bwi-shared-folder" route="ops">
               <bit-nav-item text="Infrastructure" route="ops-infra"></bit-nav-item>
               <bit-nav-item text="Support" route="ops-support"></bit-nav-item>
             </bit-nav-group>
@@ -368,17 +440,21 @@ export const RealisticSideNavV2: Story = {
           <ng-container slot="product-switcher">
             <navigation-product-switcher [mockOrgs]="mockOrgs" [mockProviders]="mockProviders"></navigation-product-switcher>
           </ng-container>
-          <bit-nav-group text="My vault" [open]="true">
+          <bit-nav-group text="My vault" route="vault" [open]="true">
             <bit-icon-tile icon="bwi-vault" variant="primary" size="sm"></bit-icon-tile>
             <bit-nav-item text="All vault items" route="all-items" icon="bwi-list"></bit-nav-item>
             <bit-nav-item text="My items" route="my-items" icon="bwi-user"></bit-nav-item>
-            <bit-nav-item text="Shared folders" route="shared" icon="bwi-collection-shared"></bit-nav-item>
+            <bit-nav-item text="Shared folders" route="shared" icon="bwi-shared-folder"></bit-nav-item>
             <bit-nav-section icon="bwi-pin" label="Pinned">
-              <bit-nav-group text="Engineering" icon="bwi-collection-shared" route="eng">
-                <bit-nav-item text="Frontend" route="eng-fe"></bit-nav-item>
+              <bit-nav-group text="Engineering" route="eng">
+                <bit-nav-item text="Frontend" route="eng-fe" icon="bwi-desktop"></bit-nav-item>
                 <bit-nav-item text="Backend" route="eng-be"></bit-nav-item>
+                <bit-nav-group text="Nested again" route="eng-nested">
+                  <bit-nav-item text="Something nested" route="eng-nested-a" icon="bwi-folder"></bit-nav-item>
+                  <bit-nav-item text="Another thing nested" route="eng-nested-b"></bit-nav-item>
+                </bit-nav-group>
               </bit-nav-group>
-              <bit-nav-group text="Operations" icon="bwi-collection-shared" route="ops">
+              <bit-nav-group text="Operations" icon="bwi-shared-folder" route="ops">
                 <bit-nav-item text="Infrastructure" route="ops-infra"></bit-nav-item>
                 <bit-nav-item text="Support" route="ops-support"></bit-nav-item>
               </bit-nav-group>
@@ -398,12 +474,80 @@ export const RealisticSideNavV2: Story = {
             <bit-nav-item text="Settings" icon="bwi-cog" route="settings"></bit-nav-item>
           </bit-nav-section>
           <ng-container slot="callout">
-            <div class="tw-px-3">
-              <bit-callout class="[&_aside]:!tw-m-0" icon="bwi-premium" type="info" title="Info">Some promo callout content here</bit-callout>
-            </div>
+            <app-upgrade-callout></app-upgrade-callout>
           </ng-container>
           <ng-container slot="account">
-            <div class="tw-p-3">Account section would go here</div>
+            <app-account-menu [expanded]="true"></app-account-menu>
+          </ng-container>
+        </bit-side-nav>
+        <router-outlet></router-outlet>
+      </bit-layout>
+    `,
+  }),
+  args: {
+    mockOrgs: [
+      {
+        id: "org-a",
+        canManageUsers: true,
+        canAccessSecretsManager: true,
+        enabled: true,
+      },
+    ] as Organization[],
+    mockProviders: [{ id: "provider-a" }] as Provider[],
+  },
+  globals: enabledFlags(FeatureFlag.VFO1Foundation),
+};
+
+/**
+ * Same as `RealisticSideNavV2`, but collapsed to the icon rail, with the account menu in its
+ * icon-only trigger state. Collapsed items have no visible label, so this is the story that shows
+ * the `bitTooltip` affordance naming them on hover and keyboard focus.
+ */
+export const RealisticSideNavV2CollapsedAccount: Story = {
+  decorators: [collapsedSideNavDecorator],
+  render: (args) => ({
+    props: { ...args, logo: SideNavLogo },
+    template: `
+      <bit-layout>
+        <bit-side-nav>
+          <bit-nav-logo [openIcon]="logo" route="." label="Bitwarden"></bit-nav-logo>
+          <ng-container slot="product-switcher">
+            <navigation-product-switcher [mockOrgs]="mockOrgs" [mockProviders]="mockProviders"></navigation-product-switcher>
+          </ng-container>
+          <bit-nav-group text="My vault" route="vault" [open]="true">
+            <bit-icon-tile icon="bwi-vault" variant="primary" size="sm"></bit-icon-tile>
+            <bit-nav-item text="All vault items" route="all-items" icon="bwi-list"></bit-nav-item>
+            <bit-nav-item text="My items" route="my-items" icon="bwi-user"></bit-nav-item>
+            <bit-nav-item text="Shared folders" route="shared" icon="bwi-shared-folder"></bit-nav-item>
+            <bit-nav-section icon="bwi-pin" label="Pinned">
+              <bit-nav-group text="Engineering" icon="bwi-shared-folder" route="eng">
+                <bit-nav-item text="Frontend" route="eng-fe"></bit-nav-item>
+                <bit-nav-item text="Backend" route="eng-be"></bit-nav-item>
+              </bit-nav-group>
+              <bit-nav-group text="Operations" icon="bwi-shared-folder" route="ops">
+                <bit-nav-item text="Infrastructure" route="ops-infra"></bit-nav-item>
+                <bit-nav-item text="Support" route="ops-support"></bit-nav-item>
+              </bit-nav-group>
+            </bit-nav-section>
+            <bit-berry slot="end" variant="primary" [value]="1"></bit-berry>
+          </bit-nav-group>
+          <bit-nav-section label="Tools">
+            <bit-nav-item text="Send" icon="bwi-send" route="send"></bit-nav-item>
+            <bit-nav-item text="Generator" route="generator"></bit-nav-item>
+            <bit-nav-item text="Reports" icon="bwi-file-text" route="reports"></bit-nav-item>
+          </bit-nav-section>
+          <bit-nav-section label="Manage">
+            <bit-nav-item text="My tags" icon="bwi-tag"></bit-nav-item>
+            <bit-nav-item text="Archive" icon="bwi-archive">
+              <bit-badge slot="end" startIcon="bwi-premium" size="small" variant="primary">Premium</bit-badge>
+            </bit-nav-item>
+            <bit-nav-item text="Settings" icon="bwi-cog" route="settings"></bit-nav-item>
+          </bit-nav-section>
+          <ng-container slot="callout">
+            <app-upgrade-callout></app-upgrade-callout>
+          </ng-container>
+          <ng-container slot="account">
+            <app-account-menu></app-account-menu>
           </ng-container>
         </bit-side-nav>
         <router-outlet></router-outlet>

@@ -6,7 +6,9 @@ import { BehaviorSubject } from "rxjs";
 
 import { AutofillSettingsServiceAbstraction } from "@bitwarden/common/autofill/services/autofill-settings.service";
 import { DomainSettingsService } from "@bitwarden/common/autofill/services/domain-settings.service";
+import { DESKTOP_APP_URI_PREFIX } from "@bitwarden/common/desktop-native/models/desktop-autotype-pairing-uri";
 import { DeviceType } from "@bitwarden/common/enums";
+import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
 import { UriMatchStrategy } from "@bitwarden/common/models/domain/domain-service";
 import { ConfigService } from "@bitwarden/common/platform/abstractions/config/config.service";
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
@@ -15,8 +17,8 @@ import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
 import { LoginUriView } from "@bitwarden/common/vault/models/view/login-uri.view";
 import { LoginView } from "@bitwarden/common/vault/models/view/login.view";
 
-import { DESKTOP_APP_URI_PREFIX } from "../../../models/desktop-app-uri.constants";
 import { CipherFormContainer } from "../../cipher-form-container";
+import { CipherFormHTTPAuthenticationService } from "../../services/cipher-form-http-authentication.service";
 
 import { AutofillOptionsComponent } from "./autofill-options.component";
 
@@ -38,7 +40,9 @@ describe("AutofillOptionsComponent", () => {
   let autofillSettingsService: MockProxy<AutofillSettingsServiceAbstraction>;
   let platformUtilsService: MockProxy<PlatformUtilsService>;
   let configService: MockProxy<ConfigService>;
-  let featureFlagSubject: BehaviorSubject<boolean>;
+  let httpAuthenticationService: MockProxy<CipherFormHTTPAuthenticationService>;
+  let mvpFeatureFlagSubject: BehaviorSubject<boolean>;
+  let gaFeatureFlagSubject: BehaviorSubject<boolean>;
   const getInitialCipherView = jest.fn((): any => null);
   const formStatusChange$ = new BehaviorSubject<"enabled" | "disabled">("enabled");
 
@@ -48,7 +52,8 @@ describe("AutofillOptionsComponent", () => {
     cipherFormContainer.formStatusChange$ = formStatusChange$.asObservable();
     liveAnnouncer = mock<LiveAnnouncer>();
     platformUtilsService = mock<PlatformUtilsService>();
-    featureFlagSubject = new BehaviorSubject<boolean>(false);
+    mvpFeatureFlagSubject = new BehaviorSubject<boolean>(false);
+    gaFeatureFlagSubject = new BehaviorSubject<boolean>(false);
     configService = mock<ConfigService>();
     domainSettingsService = mock<DomainSettingsService>();
     domainSettingsService.resolvedDefaultUriMatchStrategy$ = new BehaviorSubject(null);
@@ -56,6 +61,9 @@ describe("AutofillOptionsComponent", () => {
     autofillSettingsService = mock<AutofillSettingsServiceAbstraction>();
     autofillSettingsService.autofillOnPageLoadDefault$ = new BehaviorSubject(false);
     autofillSettingsService.autofillOnPageLoad$ = new BehaviorSubject(true);
+
+    httpAuthenticationService = mock<CipherFormHTTPAuthenticationService>();
+    httpAuthenticationService.confirmDefaultMatchStrategy.mockResolvedValue(true);
 
     await TestBed.configureTestingModule({
       imports: [AutofillOptionsComponent],
@@ -70,6 +78,7 @@ describe("AutofillOptionsComponent", () => {
         { provide: AutofillSettingsServiceAbstraction, useValue: autofillSettingsService },
         { provide: PlatformUtilsService, useValue: platformUtilsService },
         { provide: ConfigService, useValue: configService },
+        { provide: CipherFormHTTPAuthenticationService, useValue: httpAuthenticationService },
       ],
     }).compileComponents();
 
@@ -292,6 +301,60 @@ describe("AutofillOptionsComponent", () => {
     expect(enable).toHaveBeenCalledWith({ emitEvent: false });
   });
 
+  describe("HTTP authentication", () => {
+    it("shares the URI match strategies when initialized from an existing cipher", () => {
+      getInitialCipherView.mockReturnValueOnce({
+        login: Object.assign(new LoginView(), {
+          uris: [
+            Object.assign(new LoginUriView(), {
+              uri: "https://example.com",
+              match: UriMatchStrategy.Host,
+            }),
+            Object.assign(new LoginUriView(), { uri: "https://example.org", match: null }),
+          ],
+        }),
+      });
+
+      fixture.detectChanges();
+
+      expect(httpAuthenticationService.updateUriMatchStrategies).toHaveBeenLastCalledWith([
+        UriMatchStrategy.Host,
+        null,
+      ]);
+    });
+
+    it("shares the URI match strategies when the URIs change", () => {
+      fixture.detectChanges();
+
+      component.autofillOptionsForm.controls.uris.at(0).setValue({
+        uri: "https://example.com",
+        matchDetection: UriMatchStrategy.Exact,
+      });
+
+      expect(httpAuthenticationService.updateUriMatchStrategies).toHaveBeenLastCalledWith([
+        UriMatchStrategy.Exact,
+      ]);
+    });
+
+    it("adds a URI requested by the user when the default match strategy is confirmed", async () => {
+      fixture.detectChanges();
+
+      await component.addUriFromUser({ uri: null, matchDetection: null });
+
+      expect(httpAuthenticationService.confirmDefaultMatchStrategy).toHaveBeenCalled();
+      expect(component.autofillOptionsForm.value.uris.length).toEqual(2);
+    });
+
+    it("does not add a URI requested by the user when the default match strategy is declined", async () => {
+      httpAuthenticationService.confirmDefaultMatchStrategy.mockResolvedValue(false);
+      fixture.detectChanges();
+
+      await component.addUriFromUser({ uri: null, matchDetection: null });
+
+      expect(component.autofillOptionsForm.value.uris.length).toEqual(1);
+    });
+  });
+
   // Autotype App Tests
   describe("showAddAppDropdown", () => {
     it("is false when device type is not Windows Desktop", () => {
@@ -302,7 +365,27 @@ describe("AutofillOptionsComponent", () => {
 
     it("is false when device type is Windows Desktop but windows-desktop-autotype-ga feature flag is off", () => {
       platformUtilsService.getDevice.mockReturnValue(DeviceType.WindowsDesktop);
-      configService.getFeatureFlag$.mockReturnValue(featureFlagSubject);
+      configService.getFeatureFlag$.mockImplementation((flag: FeatureFlag) =>
+        flag === FeatureFlag.WindowsDesktopAutotypeGA
+          ? gaFeatureFlagSubject
+          : mvpFeatureFlagSubject,
+      );
+
+      const localFixture = TestBed.createComponent(AutofillOptionsComponent);
+      localFixture.detectChanges();
+
+      expect(localFixture.componentInstance["showAddAppDropdown"]()).toBe(false);
+    });
+
+    it("is false when device is Windows Desktop and only the MVP feature flag is enabled", () => {
+      platformUtilsService.getDevice.mockReturnValue(DeviceType.WindowsDesktop);
+      configService.getFeatureFlag$.mockImplementation((flag: FeatureFlag) =>
+        flag === FeatureFlag.WindowsDesktopAutotypeGA
+          ? gaFeatureFlagSubject
+          : mvpFeatureFlagSubject,
+      );
+
+      mvpFeatureFlagSubject.next(true);
 
       const localFixture = TestBed.createComponent(AutofillOptionsComponent);
       localFixture.detectChanges();
@@ -312,14 +395,35 @@ describe("AutofillOptionsComponent", () => {
 
     it("is true when device is Windows Desktop and windows-desktop-autotype-ga feature flag is on", () => {
       platformUtilsService.getDevice.mockReturnValue(DeviceType.WindowsDesktop);
-      configService.getFeatureFlag$.mockReturnValue(featureFlagSubject);
+      configService.getFeatureFlag$.mockImplementation((flag: FeatureFlag) =>
+        flag === FeatureFlag.WindowsDesktopAutotypeGA
+          ? gaFeatureFlagSubject
+          : mvpFeatureFlagSubject,
+      );
 
-      featureFlagSubject.next(true);
+      gaFeatureFlagSubject.next(true);
 
       const localFixture = TestBed.createComponent(AutofillOptionsComponent);
       localFixture.detectChanges();
 
       expect(localFixture.componentInstance["showAddAppDropdown"]()).toBe(true);
+    });
+
+    it("is false when device is Windows Desktop and both the MVP and GA feature flags are enabled", () => {
+      platformUtilsService.getDevice.mockReturnValue(DeviceType.WindowsDesktop);
+      configService.getFeatureFlag$.mockImplementation((flag: FeatureFlag) =>
+        flag === FeatureFlag.WindowsDesktopAutotypeGA
+          ? gaFeatureFlagSubject
+          : mvpFeatureFlagSubject,
+      );
+
+      mvpFeatureFlagSubject.next(true);
+      gaFeatureFlagSubject.next(true);
+
+      const localFixture = TestBed.createComponent(AutofillOptionsComponent);
+      localFixture.detectChanges();
+
+      expect(localFixture.componentInstance["showAddAppDropdown"]()).toBe(false);
     });
   });
 
@@ -340,9 +444,13 @@ describe("AutofillOptionsComponent", () => {
 
     it("renders an 'Add website or app' dropdown button with 'Website' and 'App' options when showAddAppDropdown is true", () => {
       platformUtilsService.getDevice.mockReturnValue(DeviceType.WindowsDesktop);
-      configService.getFeatureFlag$.mockReturnValue(featureFlagSubject);
+      configService.getFeatureFlag$.mockImplementation((flag: FeatureFlag) =>
+        flag === FeatureFlag.WindowsDesktopAutotypeGA
+          ? gaFeatureFlagSubject
+          : mvpFeatureFlagSubject,
+      );
 
-      featureFlagSubject.next(true);
+      gaFeatureFlagSubject.next(true);
 
       const localFixture = TestBed.createComponent(AutofillOptionsComponent);
       localFixture.detectChanges();
@@ -368,10 +476,14 @@ describe("AutofillOptionsComponent", () => {
       expect(appBtn).toBeTruthy();
     });
 
-    it("clicking 'App' menu item calls addUri with the desktopapp:// prefix", () => {
+    it("clicking 'App' menu item calls addUri with the desktopapp:// prefix", async () => {
       platformUtilsService.getDevice.mockReturnValue(DeviceType.WindowsDesktop);
-      configService.getFeatureFlag$.mockReturnValue(featureFlagSubject);
-      featureFlagSubject.next(true);
+      configService.getFeatureFlag$.mockImplementation((flag: FeatureFlag) =>
+        flag === FeatureFlag.WindowsDesktopAutotypeGA
+          ? gaFeatureFlagSubject
+          : mvpFeatureFlagSubject,
+      );
+      gaFeatureFlagSubject.next(true);
 
       const localFixture = TestBed.createComponent(AutofillOptionsComponent);
       const localComponent = localFixture.componentInstance;
@@ -394,6 +506,7 @@ describe("AutofillOptionsComponent", () => {
       const appBtn = menuButtons.find((btn) => btn.textContent?.trim() === "app");
       expect(appBtn).toBeTruthy();
       appBtn.click();
+      await localFixture.whenStable();
 
       expect(localComponent.addUri).toHaveBeenCalledWith(
         { uri: DESKTOP_APP_URI_PREFIX, matchDetection: null },

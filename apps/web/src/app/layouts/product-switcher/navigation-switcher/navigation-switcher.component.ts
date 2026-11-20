@@ -1,5 +1,5 @@
 import { AsyncPipe, NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, inject, input } from "@angular/core";
 import { RouterModule } from "@angular/router";
 import { map, Observable } from "rxjs";
 
@@ -7,10 +7,14 @@ import {
   MenuModule,
   NavigationModule,
   IconComponent,
+  IconTileVariant,
   SideNavService,
+  SideNavVariant,
   IconTileComponent,
+  PopoverModule,
 } from "@bitwarden/components";
 import { I18nPipe } from "@bitwarden/ui-common";
+import { CoachmarkComponent, CoachmarkService } from "@bitwarden/vault";
 
 import { UpgradeNavButtonComponent } from "../../../billing/individual/upgrade/upgrade-nav-button/upgrade-nav-button/upgrade-nav-button.component";
 import { ProductSwitcherItem, ProductSwitcherService } from "../shared/product-switcher.service";
@@ -28,6 +32,8 @@ import { ProductSwitcherItem, ProductSwitcherService } from "../shared/product-s
     UpgradeNavButtonComponent,
     IconComponent,
     IconTileComponent,
+    PopoverModule,
+    CoachmarkComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,10 +41,19 @@ export class NavigationProductSwitcherComponent {
   constructor(private readonly productSwitcherService: ProductSwitcherService) {}
 
   private readonly sideNavService = inject(SideNavService);
+  protected readonly coachmark = inject(CoachmarkService);
 
   protected readonly sideNavOpen = this.sideNavService.open;
   protected readonly sideNavWidthRem = this.sideNavService.widthRem;
   protected readonly version = this.sideNavService.version;
+
+  /** The variant of the side nav this switcher sits in. */
+  readonly variant = input<SideNavVariant>("primary");
+
+  /** The secondary nav is the Admin Console's, whose product tile is neutral rather than brand. */
+  protected readonly tileVariant = computed<IconTileVariant>(() =>
+    this.variant() === "secondary" ? "gray" : "primary",
+  );
 
   protected readonly shouldShowPremiumUpgradeButton$: Observable<boolean> =
     this.productSwitcherService.shouldShowPremiumUpgradeButton$;

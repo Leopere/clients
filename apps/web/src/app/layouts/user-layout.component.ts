@@ -20,11 +20,20 @@ import { SyncService } from "@bitwarden/common/platform/sync";
 import { PopoverModule, SideNavService, SvgModule } from "@bitwarden/components";
 import { SendPolicyService } from "@bitwarden/send-ui";
 import { I18nPipe } from "@bitwarden/ui-common";
-import { VaultManageNavComponent, VaultNavSectionComponent } from "@bitwarden/vault";
+import {
+  BULK_DELETE_DIALOG,
+  COLLECTION_DIALOG,
+  VaultManageNavComponent,
+  VaultNavSectionComponent,
+  CoachmarkComponent,
+  CoachmarkService,
+} from "@bitwarden/vault";
 import { PremiumSubscriptionRoutingService } from "@bitwarden/web-vault/app/billing/individual/services/premium-subscription-routing.service";
+import { BulkDeleteDialogWebAdapter } from "@bitwarden/web-vault/app/vault/individual-vault/bulk-action-dialogs/bulk-delete-dialog-web.adapter";
+import { CollectionWebDialogAdapter } from "@bitwarden/web-vault/app/vault/individual-vault/shared-folders/collection-web-dialog.adapter";
 
 import { BillingFreeFamiliesNavItemComponent } from "../billing/shared/billing-free-families-nav-item.component";
-import { CoachmarkComponent, CoachmarkService } from "../vault/components/coachmark";
+import { PamUserNavSlotComponent } from "../pam/user-nav-slot/pam-user-nav-slot.component";
 
 import { WebLayoutModule } from "./web-layout.module";
 
@@ -42,8 +51,13 @@ import { WebLayoutModule } from "./web-layout.module";
     VaultManageNavComponent,
     VaultNavSectionComponent,
     BillingFreeFamiliesNavItemComponent,
+    PamUserNavSlotComponent,
     PopoverModule,
     CoachmarkComponent,
+  ],
+  providers: [
+    { provide: COLLECTION_DIALOG, useClass: CollectionWebDialogAdapter },
+    { provide: BULK_DELETE_DIALOG, useClass: BulkDeleteDialogWebAdapter },
   ],
 })
 export class UserLayoutComponent implements OnInit {
@@ -56,6 +70,12 @@ export class UserLayoutComponent implements OnInit {
 
   protected readonly coachmarkService = inject(CoachmarkService);
   protected readonly sideNavService = inject(SideNavService);
+  private readonly configService = inject(ConfigService);
+
+  protected readonly exportRoute = computed(() => {
+    const vfo1Enabled = this.vfo1Enabled();
+    return vfo1Enabled ? "/settings/export" : "/tools/export";
+  });
 
   protected readonly vfo1Enabled: Signal<boolean> = toSignal(
     inject(ConfigService).getFeatureFlag$(FeatureFlag.VFO1Foundation),

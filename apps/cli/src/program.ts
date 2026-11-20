@@ -303,6 +303,7 @@ export class Program extends BaseProgram {
             this.serviceContainer.i18nService,
             this.serviceContainer.encryptedMigrator,
             this.serviceContainer.unlockService,
+            this.serviceContainer.biometricsService,
           );
           const response = await command.run(password, cmd);
           this.processResponse(response);
@@ -457,6 +458,7 @@ export class Program extends BaseProgram {
         const command = new UpdateCommand(
           this.serviceContainer.platformUtilsService,
           this.serviceContainer.apiService,
+          this.serviceContainer.licenseType,
         );
         const response = await command.run();
         this.processResponse(response);

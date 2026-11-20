@@ -14,8 +14,10 @@ import { RouterModule, RouterLinkActive } from "@angular/router";
 import { IconComponent } from "../icon";
 import { IconButtonModule } from "../icon-button";
 import { IconTileComponent } from "../icon-tile";
+import { TooltipDirective } from "../tooltip";
 
 import { NavBaseComponent } from "./nav-base.component";
+import { NavToggleScope } from "./nav-toggle-scope";
 import { SideNavService } from "./side-nav.service";
 
 /**
@@ -40,12 +42,13 @@ export abstract class NavGroupAbstraction {
   selector: "bit-nav-item",
   templateUrl: "./nav-item.component.html",
   providers: [{ provide: NavBaseComponent, useExisting: NavItemComponent }],
-  imports: [NgTemplateOutlet, IconButtonModule, RouterModule, IconComponent],
+  imports: [NgTemplateOutlet, IconButtonModule, RouterModule, IconComponent, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "(focusin)": "onFocusIn($event.target)",
     "(focusout)": "onFocusOut()",
     class: "tw-block",
+    "data-spotlight-host": "",
   },
 })
 export class NavItemComponent extends NavBaseComponent {
@@ -88,6 +91,12 @@ export class NavItemComponent extends NavBaseComponent {
 
   protected readonly sideNavService = inject(SideNavService);
   private readonly parentNavGroup = inject(NavGroupAbstraction, { optional: true });
+  private readonly toggleScope = inject(NavToggleScope, { optional: true });
+
+  /** Depth 2+ always reserves the start slot so rows indent beneath their parent's toggle. */
+  protected readonly reserveStartSlot = computed(
+    () => this.treeDepth() > 1 || !!this.toggleScope?.hasStartToggle(),
+  );
 
   /**
    * Is `true` if `to` matches the current route
@@ -117,6 +126,12 @@ export class NavItemComponent extends NavBaseComponent {
     return "0";
   });
 
+  /** Indent for depth 2+ rows; depth 1 is indented by the top-level group's container. */
+  protected readonly nestedIndent = computed(() => {
+    const depth = this.treeDepth();
+    return depth > 1 ? `${(depth - 1) * this.TREE_DEPTH_PADDING}rem` : null;
+  });
+
   /**
    * Allow overriding of the RouterLink['ariaCurrentWhenActive'] property.
    *
@@ -124,6 +139,13 @@ export class NavItemComponent extends NavBaseComponent {
    * not be marked `current` while the child page is marked as `current`
    */
   readonly ariaCurrentWhenActive = input<RouterLinkActive["ariaCurrentWhenActive"]>("page");
+
+  /**
+   * Unconditional `aria-current` value applied directly to the interactive element.
+   * Used by composing components (e.g. nav-group in vfo1) when the route is suppressed and
+   * `routerLinkActive` never fires, so active state must be signalled without a router link.
+   */
+  readonly ariaCurrentValue = input<RouterLinkActive["ariaCurrentWhenActive"]>(undefined);
 
   /**
    * `aria-expanded` for the interactive element. Set by a composing component (e.g. a nav group)

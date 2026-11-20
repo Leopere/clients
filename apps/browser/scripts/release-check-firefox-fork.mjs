@@ -356,23 +356,27 @@ async function verifyBuildProvenance(policy) {
     throw new Error("The installed OSS SDK does not match the pinned GPL provenance policy.");
   }
 
-  const expectedWasmHash = policy.gplSdk.wasmSha256;
-  const installedWasmHash = await sha256(path.join(repositoryDirectory, policy.gplSdk.wasm));
-  if (installedWasmHash !== expectedWasmHash) {
-    throw new Error("The installed OSS SDK WebAssembly does not match the reviewed GPL payload.");
+  const sdkDirectory = path.join(repositoryDirectory, "node_modules", policy.gplSdk.package);
+  const reviewedWasm = Object.entries(policy.gplSdk.wasmSha256ByFile);
+  for (const [fileName, expectedHash] of reviewedWasm) {
+    if ((await sha256(path.join(sdkDirectory, fileName))) !== expectedHash) {
+      throw new Error(
+        `The installed OSS SDK WebAssembly differs from the reviewed payload: ${fileName}.`,
+      );
+    }
   }
+
   const wasmFiles = buildFiles.filter((entry) => entry.endsWith(".wasm"));
-  if (wasmFiles.length === 0) {
-    throw new Error("Fork build contains no SDK WebAssembly artifact to verify.");
-  }
   const wasmHashes = await Promise.all(
     wasmFiles.map((entry) => sha256(path.join(buildDirectory, entry))),
   );
-  if (!wasmHashes.includes(expectedWasmHash)) {
-    throw new Error("Fork build SDK WebAssembly does not match the installed GPL SDK package.");
+  const actualHashes = [...new Set(wasmHashes)].sort();
+  const expectedHashes = reviewedWasm.map(([, hash]) => hash).sort();
+  if (!isDeepStrictEqual(actualHashes, expectedHashes)) {
+    throw new Error("Fork build WebAssembly differs from the reviewed GPL SDK payloads.");
   }
 
-  return { buildFiles: buildFiles.length, gplSdkWasmSha256: expectedWasmHash };
+  return { buildFiles: buildFiles.length, gplSdkWasmSha256: policy.gplSdk.wasmSha256ByFile };
 }
 
 async function verifyPackageMatchesBuild(archivePath) {

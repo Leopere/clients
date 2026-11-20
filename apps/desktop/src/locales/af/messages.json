@@ -1,12 +1,34 @@
 {
+  "appLogoLabel": {
+    "message": "Bitwarden logo"
+  },
   "bitwarden": {
     "message": "Bitwarden"
+  },
+  "bitwardenBeta": {
+    "message": "Bitwarden Beta",
+    "description": "Product name for the beta channel; shown in the tray tooltip and About dialog"
   },
   "filters": {
     "message": "Filters"
   },
   "allItems": {
     "message": "Alle Items"
+  },
+  "allVaultItems": {
+    "message": "Alle kluisitems"
+  },
+  "myItemsV2": {
+    "message": "My items"
+  },
+  "vaults": {
+    "message": "Kluise"
+  },
+  "tools": {
+    "message": "Gereedskap"
+  },
+  "manage": {
+    "message": "Bestuur"
   },
   "favorites": {
     "message": "Gunstelinge"
@@ -101,6 +123,10 @@
   "resetSearch": {
     "message": "Herstel soektog"
   },
+  "clearSearchTooltip": {
+    "message": "Clear by clicking here or pressing Esc.",
+    "description": "Tooltip on the button that clears the search field. \"Esc\" is the Escape key on the keyboard — use the abbreviation printed on local keyboards."
+  },
   "addItem": {
     "message": "Voeg item toe"
   },
@@ -113,6 +139,90 @@
   "sharedFolders": {
     "message": "Gedeelde vouers"
   },
+  "sharedFoldersInParent": {
+    "message": "Gedeelde vouers in $NAME$",
+    "description": "Titles the grid of shared folders nested directly inside the shared folder being viewed.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Engineering"
+      }
+    }
+  },
+  "sharedFolderCount": {
+    "message": "$COUNT$ gedeelde vouers",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "16"
+      }
+    }
+  },
+  "sharedFolderSingular": {
+    "message": "$COUNT$ gedeelde vouer",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "foldersInParent": {
+    "message": "Folders in $NAME$",
+    "description": "Titles the grid of the user's own folders nested directly inside the folder being viewed.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Banking"
+      }
+    }
+  },
+  "folderCount": {
+    "message": "$COUNT$ folders",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "16"
+      }
+    }
+  },
+  "folderSingular": {
+    "message": "$COUNT$ folder",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "nestedSharedFolderCount": {
+    "message": "$COUNT$ nested shared folders",
+    "description": "Subtitle under a shared folder's name, counting the shared folders directly inside it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "nestedSharedFolderSingular": {
+    "message": "1 nested shared folder",
+    "description": "Subtitle under a shared folder's name when exactly one shared folder is directly inside it."
+  },
+  "nestedFolderCount": {
+    "message": "$COUNT$ nested folders",
+    "description": "Subtitle under a folder's name in My folders, counting the folders directly inside it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "nestedFolderSingular": {
+    "message": "1 nested folder",
+    "description": "Subtitle under a folder's name in My folders when exactly one folder is directly inside it."
+  },
   "myFolder": {
     "message": "My vouer"
   },
@@ -122,11 +232,14 @@
   "foldersFilterTooltip": {
     "message": "Voeg vouers by items om hulle hier te filter."
   },
+  "myItemsFilterTooltip": {
+    "message": "Voeg items by My items om dit hier te filter."
+  },
+  "sharedFolderFilterTooltip": {
+    "message": "Voeg items by 'n gedeelde vouer om hier te filter."
+  },
   "addSharedFolder": {
     "message": "Voeg gedeelde vouer by"
-  },
-  "newSharedFolder": {
-    "message": "Nuwe gedeelde vouer"
   },
   "searchSharedFolder": {
     "message": "Soek gedeelde vouer"
@@ -287,58 +400,6 @@
   "addItemHeaderPassport": {
     "message": "Voeg paspoort by",
     "description": "Header for new passport item type"
-  },
-  "newItemHeaderLogin": {
-    "message": "Nuwe Aanmelding",
-    "description": "Header for new login item type"
-  },
-  "newItemHeaderCard": {
-    "message": "Nuwe Kaart",
-    "description": "Header for new card item type"
-  },
-  "newItemHeaderIdentity": {
-    "message": "Nuwe Identiteit",
-    "description": "Header for new identity item type"
-  },
-  "newItemHeaderNote": {
-    "message": "Nuwe Nota",
-    "description": "Header for new note item type"
-  },
-  "newItemHeaderSecureNote": {
-    "message": "Nuwe veilige nota",
-    "description": "Header for new secure note item type"
-  },
-  "newItemHeaderSshKey": {
-    "message": "Nuwe SSH-sleutel",
-    "description": "Header for new SSH key item type"
-  },
-  "newItemHeaderBankAccount": {
-    "message": "Nuwe bankrekening",
-    "description": "Header for new bank account item type"
-  },
-  "newItemHeaderDriversLicense": {
-    "message": "Nuwe lisensie",
-    "description": "Header for new license item type"
-  },
-  "newItemHeaderPassport": {
-    "message": "Nuwe paspoort",
-    "description": "Header for new passport item type"
-  },
-  "editItemHeaderLogin": {
-    "message": "Wysig Aanmelding",
-    "description": "Header for edit login item type"
-  },
-  "editItemHeaderCard": {
-    "message": "Wysig Kaart",
-    "description": "Header for edit card item type"
-  },
-  "editItemHeaderIdentity": {
-    "message": "Wysig Identiteit",
-    "description": "Header for edit identity item type"
-  },
-  "editItemHeaderNote": {
-    "message": "Wysig Nota",
-    "description": "Header for edit note item type"
   },
   "editItemHeaderSecureNote": {
     "message": "Wysig veilige nota",
@@ -738,16 +799,25 @@
   "decryptionError": {
     "message": "Dekripsiefout"
   },
-  "couldNotDecryptVaultItemsBelow": {
-    "message": "Bitwarden kon nie die kluisitem(s) hieronder ontsyfer nie."
+  "couldNotDecryptVaultItem": {
+    "message": "Bitwarden kon nie die kluisitem hieronder ontsleutel nie. Kontak Bitwarden Klientediens en verskaf die item-ID hieronder om te sien of dit herstel kan word."
   },
-  "contactCSToAvoidDataLossPart1": {
-    "message": "Kontak klant sukses",
-    "description": "This is part of a larger sentence. The full sentence will read 'Contact customer success to avoid additional data loss.'"
+  "couldNotDecryptVaultItems": {
+    "message": "Bitwarden kon nie die kluisitems hieronder ontsleutel nie. Kontak Bitwarden Klientediens en verskaf die item-ID's hieronder om te sien of dit herstel kan word."
   },
-  "contactCSToAvoidDataLossPart2": {
-    "message": "om addisionele dataverlies te vermy.",
-    "description": "This is part of a larger sentence. The full sentence will read 'Contact customer success to avoid additional data loss.'"
+  "itemId": {
+    "message": "Item-ID",
+    "description": "Label for a field listing the unique identifier of a single vault item."
+  },
+  "itemIds": {
+    "message": "Item-ID's",
+    "description": "Label for a field listing the unique identifiers of multiple vault items."
+  },
+  "copyId": {
+    "message": "Kopieer ID"
+  },
+  "copyAllIds": {
+    "message": "Kopieer alle ID's"
   },
   "january": {
     "message": "Januarie"
@@ -872,6 +942,12 @@
   },
   "edit": {
     "message": "Wysig"
+  },
+  "editInfo": {
+    "message": "Edit info"
+  },
+  "editAccess": {
+    "message": "Edit access"
   },
   "authenticatorKeyTotp": {
     "message": "Waarmerksleutel (TOTP)"
@@ -1153,6 +1229,15 @@
   "deletedItem": {
     "message": "Geskrapte item"
   },
+  "deleteItemError": {
+    "message": "Couldn't delete the item."
+  },
+  "restrictedItemChangeRefused": {
+    "message": "This item is restricted. Your change was not saved."
+  },
+  "controlledAccess": {
+    "message": "Controlled access"
+  },
   "overwritePasswordConfirmation": {
     "message": "Is u seker u wil oor die huidige wagwoord skryf?"
   },
@@ -1171,6 +1256,24 @@
   },
   "editFolder": {
     "message": "Wysig Vouer"
+  },
+  "editFolderNamed": {
+    "message": "Wysig $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social"
+      }
+    }
+  },
+  "deleteFolderNamed": {
+    "message": "Skrap $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Social"
+      }
+    }
   },
   "regeneratePassword": {
     "message": "Wek 'n wagwoord weer op"
@@ -1343,6 +1446,27 @@
   "selectFile": {
     "message": "Kies ’n lêer"
   },
+  "selectFileUnsupportedType": {
+    "message": "That file type isn't accepted for this source. Choose a different file"
+  },
+  "pasteContentRequired": {
+    "message": "Paste the exported content"
+  },
+  "fileTypeNotSupported": {
+    "message": "This file type isn't supported. Select a $TYPES$ file",
+    "placeholders": {
+      "types": {
+        "content": "$1",
+        "example": ".json, .csv, or .1pux"
+      }
+    }
+  },
+  "pasteContentFormatMismatch": {
+    "message": "The pasted content doesn't match the selected format"
+  },
+  "errorReadingFile": {
+    "message": "The selected file could not be read"
+  },
   "maxFileSize": {
     "message": "Maksimumlêergrootte is 500 MB."
   },
@@ -1355,11 +1479,41 @@
   "addedFolder": {
     "message": "Toegevoegde vouer"
   },
+  "folderEdited": {
+    "message": "Vouer gewysig"
+  },
+  "enterAName": {
+    "message": "Voer 'n naam in."
+  },
   "deleteFolderConfirmation": {
     "message": "Is u seker u wil hierdie vouer skrap?"
   },
   "deletedFolder": {
     "message": "Geskrapte vouer"
+  },
+  "foldersDeleted": {
+    "message": "Vouers geskrap"
+  },
+  "deleteFoldersCount": {
+    "message": "Skrap $COUNT$ vouers",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "deleteFolderDescription": {
+    "message": "Wanneer jy die $NAME$ vouer skrap, sal dit van elke item verwyder word waarop dit toegepas is. Die items self sal nie geskrap word nie.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Banking"
+      }
+    }
+  },
+  "deleteFoldersDescription": {
+    "message": "Wanneer jy hierdie vouers skrap, sal hulle van elke item verwyder word waarop hulle toegepas is. Die items self sal nie geskrap word nie."
   },
   "loginOrCreateNewAccount": {
     "message": "Teken aan of skep ’n nuwe rekening vir toegang tot u beveiligde kluis."
@@ -2028,6 +2182,25 @@
   "languageDesc": {
     "message": "Verander die taal van die toepassing. Herbegin word vereis."
   },
+  "passkeyProvider": {
+    "message": "Passkey provider"
+  },
+  "passkeyProviderDesc": {
+    "message": "Use Bitwarden to save and sign in with passkeys in other apps."
+  },
+  "turnedOn": {
+    "message": "On"
+  },
+  "turnedOff": {
+    "message": "Off"
+  },
+  "manageInSystemSettings": {
+    "message": "Manage in system settings"
+  },
+  "mayOpenSystemSettings": {
+    "message": "May open the system settings app.",
+    "description": "Screen reader hint for the 'Manage in system settings' link, which shows an inline prompt when possible and otherwise opens the operating system's settings app."
+  },
   "theme": {
     "message": "Tema"
   },
@@ -2302,6 +2475,42 @@
   },
   "noMatchingItems": {
     "message": "Geen bypassende items"
+  },
+  "noFiltersMatch": {
+    "message": "Geen filters pas by \"$SEARCH$\"",
+    "placeholders": {
+      "search": {
+        "content": "$1",
+        "example": "eng"
+      }
+    }
+  },
+  "oneFilterResult": {
+    "message": "1 resultaat",
+    "description": "Shown above a filter menu's option list when a search matches exactly one option."
+  },
+  "filterResults": {
+    "message": "$COUNT$ resultate",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    },
+    "description": "Shown above a filter menu's option list when a search matches more than one option."
+  },
+  "noFiltersMatchTerm": {
+    "message": "Geen filters pas by “$SEARCH$”",
+    "placeholders": {
+      "search": {
+        "content": "$1",
+        "example": "eng"
+      }
+    },
+    "description": "Replaces noFiltersMatch, which is immutable in Crowdin, to use typographic quotes."
+  },
+  "clearSearch": {
+    "message": "Vee soektog uit"
   },
   "selected": {
     "message": "Geselekteer"
@@ -2640,6 +2849,12 @@
   },
   "requireMasterPasswordOnAppRestart": {
     "message": "Vereis hoofwagwoord by toepherbegin"
+  },
+  "requireMasterPasswordOnAppRestartDesc": {
+    "message": "This setting provides an additional layer of protection by helping prevent other applications on your computer from unlocking Bitwarden."
+  },
+  "requireMasterPasswordOnAppRestartWarning": {
+    "message": "Unchecking this means any application on your computer may unlock Bitwarden, and access all your saved passwords."
   },
   "deleteAccount": {
     "message": "Skrap rekening"
@@ -3770,6 +3985,30 @@
       }
     }
   },
+  "forwarderUnsafeUrl": {
+    "message": "This URL isn't allowed. It must use https and can't point to a local or private network address.",
+    "description": "Displayed when a forwarder's base url fails to use https or targets a local/private network address."
+  },
+  "forwarderMalformedUrl": {
+    "message": "Enter a valid URL",
+    "description": "Displayed when a forwarder's base url can't be parsed as a url at all."
+  },
+  "forwarderUnsafeUrlDialogTitle": {
+    "message": "Unsafe URL detected",
+    "description": "Title of the dialog shown when a forwarder's self-hosted base url fails the safety check."
+  },
+  "forwarderUnsafeUrlDialogContent": {
+    "message": "This URL may be insecure or point to a private network. Using it may result in exposure of private data. Only continue if you trust this server.",
+    "description": "Body of the dialog shown when a forwarder's self-hosted base url fails the safety check."
+  },
+  "forwarderTrustUrl": {
+    "message": "Trust URL",
+    "description": "Accept button on the forwarder unsafe url confirmation dialog."
+  },
+  "forwarderUrlTrustedHint": {
+    "message": "This URL has been marked as trusted. You can edit at any time.",
+    "description": "Hint shown below the forwarder base url field once the user has trusted an unsafe value."
+  },
   "forwarderUnknownError": {
     "message": "ʼn Onbekende $SERVICENAME$-fout het voorgekom.",
     "description": "Displayed when the forwarding service failed due to an unknown error.",
@@ -4390,6 +4629,9 @@
   "importFormatError": {
     "message": "Data is nie korrek geformateer nie. Gaan asseblief jou invoerlêer na en probeer weer."
   },
+  "importUnsupportedKdfSettings": {
+    "message": "This file uses unsupported encryption settings and cannot be imported."
+  },
   "importNothingError": {
     "message": "Niks is ingevoer nie."
   },
@@ -4474,17 +4716,14 @@
   "learnAboutImportOptions": {
     "message": "Leer meer oor jou invoeropsies"
   },
-  "selectImportFolder": {
-    "message": "Kies ʼn vouer"
-  },
-  "selectImportCollection": {
-    "message": "Kies ʼn versameling"
-  },
   "importTargetHintCollection": {
     "message": "Kies hierdie opsie as jy wil hê dat die ingevoerde lêerinhoud na ʼn versameling geskuif moet word"
   },
   "importTargetHintFolder": {
     "message": "Kies hierdie opsie as jy wil hê dat die ingevoerde lêerinhoud na ʼn vouer geskuif moet word"
+  },
+  "importTargetHintSharedFolder": {
+    "message": "Select this option if you want the imported file contents moved to a shared folder"
   },
   "importUnassignedItemsError": {
     "message": "Lêer bevat ontoegewysde items."
@@ -4494,6 +4733,204 @@
   },
   "selectImportFile": {
     "message": "Kies die invoer lêer"
+  },
+  "importSourceBreadcrumb": {
+    "message": "Select source"
+  },
+  "importData": {
+    "message": "Import data"
+  },
+  "importSourceSelectTitle": {
+    "message": "Select your source"
+  },
+  "importSourceSelectDescription": {
+    "message": "Choose the password manager or browser you are importing from."
+  },
+  "importSourceBrowsers": {
+    "message": "Browsers"
+  },
+  "importSourcePasswordManagers": {
+    "message": "Password managers"
+  },
+  "importSourceShowAll": {
+    "message": "Show all"
+  },
+  "importSourceShowLess": {
+    "message": "Show less"
+  },
+  "importSourceStepCount": {
+    "message": "Step $CURRENT$ of $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "selectVault": {
+    "message": "Select vault",
+    "description": "Progress label of the import step where the user picks which vault to import into."
+  },
+  "selectLocation": {
+    "message": "Select location",
+    "description": "Progress label of the import step where the user picks where to import to. Used instead of 'Select vault' when a My items card is offered."
+  },
+  "selectAVaultTitle": {
+    "message": "Select a vault"
+  },
+  "selectALocationTitle": {
+    "message": "Select a location"
+  },
+  "importDestinationDescription": {
+    "message": "Choose where to import these items."
+  },
+  "importMyItemsOption": {
+    "message": "My items",
+    "description": "Card title for the user's own collection inside an organization that centralizes ownership."
+  },
+  "importVisibleOnlyToYou": {
+    "message": "Visible only to you"
+  },
+  "importMyItemsOwnedBy": {
+    "message": "Owned by $ORGANIZATION$, but visible only to you",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      }
+    }
+  },
+  "importOrganizationVault": {
+    "message": "Organization vault"
+  },
+  "importSharedWithOnePerson": {
+    "message": "Shared with one person"
+  },
+  "importFamilyVault": {
+    "message": "Family vault"
+  },
+  "importMoveAllItemsIntoSharedFolderA": {
+    "message": "Move all items into a $ORGANIZATION$ shared folder",
+    "description": "Checkbox label. Used when the organization name starts with a consonant; the 'An' variant is used for vowels.",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      }
+    }
+  },
+  "importMoveAllItemsIntoSharedFolderAn": {
+    "message": "Move all items into an $ORGANIZATION$ shared folder",
+    "description": "Checkbox label. Used when the organization name starts with a vowel; the 'A' variant is used for consonants.",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      }
+    }
+  },
+  "importSharedFolderHint": {
+    "message": "Move everything to a parent folder, the nested folder structure will be maintained."
+  },
+  "importSharedFolderRequired": {
+    "message": "A shared folder is required."
+  },
+  "importIntoOrganization": {
+    "message": "Items will be imported into $ORGANIZATION$.",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      }
+    }
+  },
+  "importMoveAllItemsIntoSharedFolder": {
+    "message": "Move all items into a shared folder"
+  },
+  "importNoSharedFoldersForOrg": {
+    "message": "Items can't be imported into $ORGANIZATION$ without a shared folder, and you don't manage any in it. Choose another location.",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      }
+    }
+  },
+  "importItemsCount": {
+    "message": "Import $COUNT$ items",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "74"
+      }
+    }
+  },
+  "importItemsSingular": {
+    "message": "Import 1 item"
+  },
+  "importToOrganization": {
+    "message": "Import to $ORGANIZATION$",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      }
+    }
+  },
+  "importDataMayBeShared": {
+    "message": "Your data may be shared with members of this organization."
+  },
+  "importItemTypesRestricted": {
+    "message": "$ORGANIZATION$ doesn’t allow you to import $ITEM_TYPES$. If they are in your import, they will be skipped.",
+    "placeholders": {
+      "organization": {
+        "content": "$1",
+        "example": "Acme Co"
+      },
+      "item_types": {
+        "content": "$2",
+        "example": "cards and passports"
+      }
+    }
+  },
+  "importRestrictedTypeLogin": {
+    "message": "logins",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypeSecureNote": {
+    "message": "secure notes",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypeCard": {
+    "message": "cards",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypeIdentity": {
+    "message": "identities",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypeSshKey": {
+    "message": "SSH keys",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypeBankAccount": {
+    "message": "bank accounts",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypeDriversLicense": {
+    "message": "licenses",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "importRestrictedTypePassport": {
+    "message": "passports",
+    "description": "Lowercase plural, used inside a sentence listing the item types an organization doesn't allow."
+  },
+  "goToAccessIntelligence": {
+    "message": "Go to Access Intelligence"
   },
   "chooseFile": {
     "message": "Kies Lêer"
@@ -4590,6 +5027,338 @@
       }
     }
   },
+  "importHelpCenterInstructions": {
+    "message": "Sien gedetailleerde $NAME$-instruksies in ons",
+    "description": "Followed by a hyperlink whose text is importHelpCenterLinkText, e.g. 'See detailed Safari instructions in our Help Center'.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Safari"
+      }
+    }
+  },
+  "importHelpCenterLinkText": {
+    "message": "HulpSentrum"
+  },
+  "uploadFile": {
+    "message": "Upload file"
+  },
+  "pasteAsPlainText": {
+    "message": "Paste as plain text"
+  },
+  "plainText": {
+    "message": "Plain text"
+  },
+  "profile": {
+    "message": "Profile"
+  },
+  "importManuallyInstead": {
+    "message": "Import manually instead"
+  },
+  "directlyImportInstead": {
+    "message": "Directly import instead"
+  },
+  "fastest": {
+    "message": "Fastest"
+  },
+  "importDataTitle": {
+    "message": "Import your data"
+  },
+  "importDataDirectTitle": {
+    "message": "Import your data in minutes"
+  },
+  "importDataDirectSubtitlePrefix": {
+    "message": "Import your items directly from",
+    "description": "First half of a sentence that continues with a vendor name rendered in bold, then concludes with importDataDirectSubtitleSuffix. Fixed order, not independently reorderable: 'Import your items directly from [KeePass] to get all your data.'"
+  },
+  "importDataDirectSubtitleSuffix": {
+    "message": "to get all your data.",
+    "description": "Second half of the sentence started by importDataDirectSubtitlePrefix, continuing immediately after the bolded vendor name."
+  },
+  "importDataManualSubtitle": {
+    "message": "Import from $VENDOR$ or copy and paste the export content.",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "1Password"
+      }
+    }
+  },
+  "importDataChromiumSubtitle": {
+    "message": "Select the profile you wish to import passwords from."
+  },
+  "importDataLoginTitle": {
+    "message": "Log in to $VENDOR$",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "Keeper"
+      }
+    }
+  },
+  "importDataLoginSubtitle": {
+    "message": "Your credentials are encrypted in transit and never stored."
+  },
+  "importDataSecureByDesignTitle": {
+    "message": "Secure by design"
+  },
+  "importDataSecureByDesignBody": {
+    "message": "End-to-end encrypted handoff. Bitwarden never sees your $VENDOR$ login details.",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "1Password"
+      }
+    }
+  },
+  "importDataLoginInfoTitle": {
+    "message": "We'll ask for your login info"
+  },
+  "importDataLoginInfoBody": {
+    "message": "In the next step, log in to your $VENDOR$ account.",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "1Password"
+      }
+    }
+  },
+  "importDataEverythingTransfersTitle": {
+    "message": "Everything transfers"
+  },
+  "importDataEverythingTransfersBody": {
+    "message": "Logins, cards, identities, secure notes, and TOTPs with their folder structure preserved."
+  },
+  "importDataSecureByDesignTitleV2": {
+    "message": "Fast and secure"
+  },
+  "importDataSecureByDesignBodyV2": {
+    "message": "This process is end-to-end encrypted. No export file needed."
+  },
+  "importDataLoginInfoTitleV2": {
+    "message": "All you need is your login"
+  },
+  "importDataLoginInfoBodyV2": {
+    "message": "In the next step, you'll enter your $VENDOR$ login details.",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "1Password"
+      }
+    }
+  },
+  "importDataAutomaticTransferTitle": {
+    "message": "What will transfer"
+  },
+  "importDataAutomaticTransferBody": {
+    "message": "Your logins, other items, and folders will transfer. Passkeys and attachments may be excluded."
+  },
+  "importAcceptedFormats": {
+    "message": "Accepted: $FORMATS$",
+    "placeholders": {
+      "formats": {
+        "content": "$1",
+        "example": ".json, .csv, .1pux"
+      }
+    }
+  },
+  "importVendorFileType": {
+    "message": "$VENDOR$ file type",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "KeePass"
+      }
+    }
+  },
+  "importChromiumAliasPreamble": {
+    "message": "Die proses is presies dieselfde as om vanaf Google Chrome in te voer.",
+    "description": "Shown for Chromium-based browsers other than Chrome, immediately before importHelpCenterInstructions."
+  },
+  "importKeepassxInstructions": {
+    "message": "Gebruik die KeePassX-rekenaartoepassing, gaan na \"Databasis\" → \"Voer uit na CSV-lêer\" en stoor die CSV-lêer."
+  },
+  "importAviraInstructions": {
+    "message": "Gaan in die Avira-webkluis na \"Instellings\" → \"My data\" → \"Voer data uit\" en stoor die CSV-lêer."
+  },
+  "importBlurInstructions": {
+    "message": "Klik in die Blur-webkluis boaan op jou gebruikersnaam en gaan na \"Instellings\" → \"Voer data uit\", klik dan \"Voer CSV uit\" vir jou \"Rekeninge\"."
+  },
+  "importSafeincloudInstructions": {
+    "message": "Gebruik die SafeInCloud-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit\" → \"As XML\" en stoor die XML-lêer."
+  },
+  "importPadlockInstructions": {
+    "message": "Gebruik die Padlock-rekenaartoepassing, klik die hamburgerikoon in die boonste linkerkant en gaan na \"Instellings\" → \"Voer uit\"-knoppie en stoor die lêer \"As CSV\"."
+  },
+  "importKeepass2Instructions": {
+    "message": "Gebruik die KeePass 2-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit\" en kies die \"KeePass XML (2.x)\"-opsie."
+  },
+  "importUpmInstructions": {
+    "message": "Gebruik die Universal Password Manager-rekenaartoepassing, gaan na \"Databasis\" → \"Voer uit\" en stoor die CSV-lêer."
+  },
+  "importSaferpassInstructions": {
+    "message": "Gebruik die SaferPass-blaaieruitbreiding, klik die hamburgerikoon in die boonste linkerkant en gaan na \"Instellings\". Klik die \"Voer rekeninge uit\"-knoppie om die CSV-lêer te stoor."
+  },
+  "importMeldiumInstructions": {
+    "message": "Gaan in die Meldium-webkluis na \"Instellings\". Soek die \"Voer data uit\"-funksie en klik \"Wys my my data\" om die CSV-lêer te stoor."
+  },
+  "importPassworddragonInstructions": {
+    "message": "Gebruik die Password Dragon-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit\" → \"Na XML\". Kies \"Alle rye\" in die dialoog wat verskyn en merk alle velde. Klik die \"Voer uit\"-knoppie en stoor die XML-lêer."
+  },
+  "importEnpassCsvInstructions": {
+    "message": "Gebruik die Enpass-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit\" → \"As CSV\". Kies \"OK\" by die waarskuwingswaarskuwing en stoor die CSV-lêer. Let op dat die invoerder slegs lêers ondersteun wat uitgevoer is terwyl Enpass op Engels gestel is, so pas jou instellings dienooreenkomstig aan."
+  },
+  "importEnpassJsonInstructions": {
+    "message": "Gebruik die Enpass 6-rekenaartoepassing, klik die kieslys-knoppie en gaan na \"Lêer\" → \"Voer uit\". Kies die \".json\"-lêerformaatopsie en stoor die JSON-lêer."
+  },
+  "importPwsafeInstructions": {
+    "message": "Gebruik die Password Safe-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit na\" → \"XML-formaat...\" en stoor die XML-lêer."
+  },
+  "importDashlaneCsvInstructions": {
+    "message": "Meld aan by Dashlane, klik op \"My rekening\" → \"Instellings\" → \"Voer lêer uit\" en kies \"Voer uit as 'n CSV-lêer\". Dit sal 'n zip-argief aflaai wat verskeie CSV-lêers bevat. Pak die argief uit en voer elke CSV-lêer afsonderlik in."
+  },
+  "importDashlaneJsonInstructions": {
+    "message": "Dashlane ondersteun nie meer die JSON-formaat nie. Gebruik dit slegs as jy 'n bestaande JSON het om in te voer. Gebruik die CSV-invoerder wanneer jy nuwe uitvoere skep."
+  },
+  "importMsecureInstructions": {
+    "message": "Gebruik die mSecure-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit\" → \"CSV-lêer...\" en stoor die CSV-lêer."
+  },
+  "importStickypasswordInstructions": {
+    "message": "Gebruik die Sticky Password-rekenaartoepassing, gaan na \"Kieslys\" (regs bo) → \"Voer uit\" → \"Voer alles uit\". Kies die ongeënkripteerde formaat XML-opsie en stoor die XML-lêer."
+  },
+  "importTruekeyInstructions": {
+    "message": "Gebruik die True Key-rekenaartoepassing, klik die rat-ikoon (regs bo) en gaan dan na \"Programinstellings\". Klik die \"Voer uit\"-knoppie, voer jou wagwoord in en stoor die CSV-lêer."
+  },
+  "importClipperzInstructions": {
+    "message": "Meld aan by die Clipperz-webtoepassing (clipperz.is/app). Klik die hamburgerkieslys-ikoon regs bo om die navigasiebalk uit te brei. Gaan na \"Data\" → \"Voer uit\". Klik die \"laai HTML+JSON af\"-knoppie om die HTML-lêer te stoor."
+  },
+  "importRoboformInstructions": {
+    "message": "Gebruik die RoboForm Editor-rekenaartoepassing, gaan na \"RoboForm\" (links bo) → \"Opsies\" → \"Rekening & data\" en klik die \"Voer uit\"-knoppie. Kies al jou data, verander die \"Formaat\" na \"CSV-lêer\" en klik dan die \"Voer uit\"-knoppie om die CSV-lêer te stoor. Let op: RoboForm laat jou slegs aanmeldings uitvoer. Ander items sal nie uitgevoer word nie."
+  },
+  "importPassboltInstructions": {
+    "message": "Meld aan by die Passbolt-webkluis en gaan na die \"Wagwoorde\"-lys. Kies al die wagwoorde wat jy wil uitvoer en klik die \"Voer uit\"-knoppie boaan die lys. Kies die \"csv (lastpass)\"-uitvoerformaat en klik die \"Voer uit\"-knoppie."
+  },
+  "importAscendoInstructions": {
+    "message": "Gebruik die Ascendo DataVault-rekenaartoepassing, gaan na \"Gereedskap\" → \"Voer uit\". Kies die \"Alle items (DVX, CSV)\"-opsie in die dialoog wat verskyn. Klik die \"Ok\"-knoppie om die CSV-lêer te stoor."
+  },
+  "importPasswordbossInstructions": {
+    "message": "Gebruik die Password Boss-rekenaartoepassing, gaan na \"Lêer\" → \"Voer data uit\" → \"Password Boss JSON - nie geënkripteer nie\" en stoor die JSON-lêer."
+  },
+  "importZohoInstructions": {
+    "message": "Meld aan by die Zoho-webkluis (vault.zoho.com). Gaan na \"Gereedskap\" → \"Voer geheime uit\". Kies \"Alle geheime\" en klik die \"Zoho Vault Format CSV\"-knoppie. Merk en kopieer die data uit die teksarea. Maak 'n teksredigeerder soos Notepad oop en plak die data. Stoor die data vanaf die teksredigeerder as",
+    "description": "Followed by a literal filename (zoho_export.csv) rendered as code, then a period."
+  },
+  "importSplashidInstructions": {
+    "message": "Gebruik die SplashID Safe-rekenaartoepassing, klik op die SplashID-blou slotlogo regs bo. Gaan na \"Voer uit\" → \"Voer uit as CSV\" en stoor die CSV-lêer."
+  },
+  "importPasskeepInstructions": {
+    "message": "Gebruik die PassKeep-mobiele app, gaan na \"Rugsteun/Herstel\". Soek die \"CSV-rugsteun/herstel\"-afdeling en klik \"Rugsteun na CSV\" om die CSV-lêer te stoor."
+  },
+  "importGnomeInstructionsIntro": {
+    "message": "Maak seker jy het python-keyring en python-gnomekeyring geïnstalleer. Stoor die",
+    "description": "Followed by a hyperlink whose text is importGnomeInstructionsLinkText."
+  },
+  "importGnomeInstructionsLinkText": {
+    "message": "GNOME Keyring-invoer/uitvoer"
+  },
+  "importGnomeInstructionsScriptLabel": {
+    "message": "python-skrip na jou lessenaar as",
+    "description": "Followed by a literal filename (pw_helper.py) rendered as code."
+  },
+  "importGnomeInstructionsRunTerminal": {
+    "message": ". Maak terminal oop en voer uit",
+    "description": "Follows the pw_helper.py filename; followed by a terminal command rendered as code."
+  },
+  "importGnomeInstructionsAndThen": {
+    "message": "en dan",
+    "description": "Between two terminal commands rendered as code."
+  },
+  "importGnomeInstructionsUploadResult": {
+    "message": ". Laai dan die resulterende",
+    "description": "Followed by a literal filename (my_passwords.json) rendered as code."
+  },
+  "importGnomeInstructionsFileHere": {
+    "message": "lêer hier op na Bitwarden.",
+    "description": "Follows the my_passwords.json filename."
+  },
+  "importPasswordagentInstructions": {
+    "message": "Gebruik die Password Agent-rekenaartoepassing, gaan na \"Lêer\" → \"Voer uit\", kies die \"Velde om uit te voer\"-knoppie en merk al die velde, verander die \"Uitsetformaat\" na \"CSV\", en klik dan die \"Begin\"-knoppie om die CSV-lêer te stoor."
+  },
+  "importPasspackInstructions": {
+    "message": "Meld aan by die Passpack-webwerfkluis en gaan na \"Instellings\" → \"Voer uit\", klik dan die \"Laai af\"-knoppie om die CSV-lêer te stoor."
+  },
+  "importPassmanInstructions": {
+    "message": "Maak jou Passman-kluis oop en klik op \"Instellings\" links onder. Skakel in die \"Instellings\"-venster na die \"Voer geloofsbriewe uit\"-oortjie en kies \"JSON\" as die uitvoertipe. Voer jou kluis se wagfrase in en klik die \"Voer uit\"-knoppie om die JSON-lêer te stoor."
+  },
+  "importAvastCsvInstructions": {
+    "message": "Maak die Avast Passwords-rekenaartoepassing oop en gaan na \"Instellings\" → \"Invoer/uitvoer data\". Kies die \"Voer uit\"-knoppie vir die \"Voer uit na CSV-lêer\"-opsie om die CSV-lêer te stoor."
+  },
+  "importAvastJsonInstructions": {
+    "message": "Maak die Avast Passwords-rekenaartoepassing oop en gaan na \"Instellings\" → \"Invoer/uitvoer data\". Kies die \"Voer uit\"-knoppie vir die \"Voer uit na JSON-lêer\"-opsie om die JSON-lêer te stoor."
+  },
+  "importFsecureInstructions": {
+    "message": "Maak die F-Secure KEY-rekenaartoepassing oop en gaan na \"Instellings\" → \"Voer wagwoorde uit\". Kies die \"Voer uit\"-knoppie, voer jou hoofwagwoord in, en stoor die FSK-lêer."
+  },
+  "importKasperskyInstructions": {
+    "message": "Maak die Kaspersky Password Manager-rekenaartoepassing oop en gaan na \"Instellings\" → \"Invoer/Uitvoer\". Soek die \"Voer uit na tekslêer\"-afdeling en kies die \"Voer uit\"-knoppie om die TXT-lêer te stoor."
+  },
+  "importRemembearInstructions": {
+    "message": "Maak die RememBear-rekenaartoepassing oop en gaan na \"Instellings\" → \"Rekening\" → \"Voer uit\". Voer jou hoofwagwoord in en kies die \"Voer tog uit\"-knoppie om die CSV-lêer te stoor."
+  },
+  "importPasswordwalletInstructions": {
+    "message": "Maak die PasswordWallet-rekenaartoepassing oop en gaan na \"Lêer\" → \"Voer uit\" → \"Sigbare inskrywings na tekslêer\". Voer jou wagwoord in en kies die \"Ok\"-knoppie om die TXT-lêer te stoor."
+  },
+  "importMykiInstructions": {
+    "message": "Maak die Myki-rekenaarbaaieruitbreiding oop en gaan na \"Gevorderd\" → \"Voer rekeninge uit\" en skandeer dan die QR-kode met jou mobiele toestel. Verskeie CSV-lêers sal dan in jou rekenaar se aflaaigids gestoor word."
+  },
+  "importSecuresafeInstructions": {
+    "message": "Voer jou SecureSafe-wagwoordkluis uit na 'n CSV-lêer met 'n komma-skeidingsteken."
+  },
+  "importLogmeonceInstructions": {
+    "message": "Maak die LogMeOnce-blaaieruitbreiding oop, gaan dan na \"Maak kieslys oop\" → \"Voer uit na\" en kies \"CSV-lêer\" om die CSV-lêer te stoor."
+  },
+  "importBlackberryInstructions": {
+    "message": "Maak die BlackBerry Password Keeper-toepassing oop, gaan dan na \"Instellings\" → \"Invoer/Uitvoer\". Kies \"Voer wagwoorde uit\" en volg die instruksies op die skerm om die ongeënkripteerde CSV-lêer te stoor."
+  },
+  "importButtercupInstructions": {
+    "message": "Maak die Buttercup-rekenaartoepassing oop en ontsluit jou kluis. Regsklik op jou kluis se ikoon en kies \"Voer uit\" om die CSV-lêer te stoor."
+  },
+  "importCodebookInstructions": {
+    "message": "Maak die Codebook-rekenaartoepassing oop en meld aan. Gaan na \"Lêer\" → \"Voer alles uit\", klik dan \"Ja\" op die dialoog en stoor die CSV-lêer."
+  },
+  "importEncryptrInstructions": {
+    "message": "Maak die nuutste weergawe van die Encryptr-rekenaartoepassing oop en laat al jou data sinkroniseer. Sodra die sinkronisering van jou data voltooi is, sal die aflaai-ikoon regs bo pienk word. Klik die aflaai-ikoon en stoor die CSV-lêer."
+  },
+  "importYotiInstructions": {
+    "message": "Klik in die Yoti-blaaieruitbreiding op \"Instellings\", dan \"Voer gestoorde aanmeldings uit\" en stoor die CSV-lêer."
+  },
+  "importPsonoInstructions": {
+    "message": "Meld aan by die Psono-webkluis, klik op die \"Aangemeld as\"-aftreklys, kies \"Ander\". Gaan na die \"Voer uit\"-oortjie en kies die json-tipe uitvoer en klik dan op Voer uit."
+  },
+  "importPasskyInstructions": {
+    "message": "Meld aan by \"https://vault.passky.org\" → \"Invoer & Uitvoer\" → \"Voer uit\" in die Passky-afdeling. (\"Rugsteun\" word nie ondersteun nie, want dit is geënkripteer)."
+  },
+  "importProtonpassInstructions": {
+    "message": "Gaan in die ProtonPass-blaaieruitbreiding na Instellings > Voer uit. Voer uit sonder PGP-enkripsie en stoor die zip-lêer."
+  },
+  "importPasswordxpInstructions": {
+    "message": "Kies Databasis → Voer uit na lêer...-kieslys. → Binne die uitvoeropsies, maak seker Vouernamen en Kolomtitels is gemerk. → Druk Blaai...-knoppie en kies die teikenlêer en stel sy tipe na CSV-lêer."
+  },
+  "importNetwrixInstructions": {
+    "message": "Maak die FullClient oop, gaan na die Hoofkieslys en kies Voer uit. Begin die uitvoer-wagwoorde-towenaar en volg die instruksies om 'n CSV-lêer uit te voer."
+  },
+  "importNordpassInstructions": {
+    "message": "Meld aan by NordPass en maak Instellings oop → Rol af na die Invoer- en Uitvoer-afdeling en kies Voer items uit → Voer jou hoofwagwoord in en kies Gaan voort. → Stoor die CSV-lêer op jou toestel."
+  },
+  "importPassworddepot17Instructions": {
+    "message": "Gaan op die rekenaartoepassing na Gereedskap → Voer uit → Voer jou hoofwagwoord in → Kies XML-formaat (*.xml) as Uitvoerformaat → Klik op volgende → Kies watter inskrywings by die uitvoer ingesluit moet word → Klik op volgende om na die voorheen gekose ligging uit te voer."
+  },
+  "importDelineaInstructions": {
+    "message": "Meld aan by Delinea, soek vir “Invoer/Uitvoer” -> kies “Voer uit” -> Kies “XML” as Uitvoerformaat -> Kies “QuantumLock” as Verifieerder-tipe -> voer jou wagwoord in en kies “Voer uit” om die XML-lêer te stoor."
+  },
+  "importDelineaCsvInstructions": {
+    "message": "Meld aan by Delinea, soek vir “Invoer/Uitvoer” -> kies “Voer uit” -> Kies “CSV” as Uitvoerformaat -> Kies “QuantumLock” as Verifieerder-tipe -> voer jou wagwoord in en kies “Voer uit” om die CSV-lêer te stoor."
+  },
   "confirmVaultImport": {
     "message": "Bevesting kluis invoer"
   },
@@ -4602,11 +5371,44 @@
   "keePassMasterPassword": {
     "message": "KeePass-hoofwagwoord"
   },
+  "keePassMasterPasswordV2": {
+    "message": "$VENDOR$ password",
+    "placeholders": {
+      "vendor": {
+        "content": "$1",
+        "example": "KeePass"
+      }
+    }
+  },
+  "kdbxPasswordRequired": {
+    "message": "Password is required."
+  },
+  "filePasswordRequired": {
+    "message": "File password is required"
+  },
+  "filePasswordInvalid": {
+    "message": "Enter a valid file password."
+  },
+  "filePasswordProtectedSubtitle": {
+    "message": "The file uploaded is password protected. Enter the password to continue."
+  },
+  "selectProfile": {
+    "message": "Select profile"
+  },
+  "kdbxPasswordInvalid": {
+    "message": "Enter a valid password"
+  },
+  "importAccountMismatchError": {
+    "message": "This file can only be imported into the account it was exported from."
+  },
   "addKeyFile": {
     "message": "Voeg sleutellêer by"
   },
   "keyFileUpload": {
     "message": "Sleutellêer-oplaai"
+  },
+  "keyFileUploadV2": {
+    "message": "Key file"
   },
   "kdbxFileUpload": {
     "message": "KDBX-lêer-oplaai"
@@ -4631,6 +5433,18 @@
   },
   "exportSuccessSkippedAttachment": {
     "message": "1 korrupte aanhegsel is tydens uitvoer oorgeslaan. Alle ander kluisdata en aanhegsels is suksesvol uitgevoer."
+  },
+  "exportExcludedGatedItem": {
+    "message": "1 item was not included in this export. It is protected by a privileged access rule, so its credentials are not available on this device."
+  },
+  "exportExcludedGatedItems": {
+    "message": "$COUNT$ items were not included in this export. They are protected by privileged access rules, so their credentials are not available on this device.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "exportSuccessSkippedAttachments": {
     "message": "$COUNT$ korrupte aanhegsels is tydens uitvoer oorgeslaan. Alle ander kluisdata en aanhegsels is suksesvol uitgevoer.",
@@ -4671,8 +5485,92 @@
   "lastPassEmail": {
     "message": "LastPass E-pos"
   },
+  "lastPassLoginEmailRequired": {
+    "message": "Email is required."
+  },
+  "lastPassLoginEmailInvalid": {
+    "message": "Enter a valid email address."
+  },
+  "lastPassLoginPasswordRequired": {
+    "message": "Password is required."
+  },
+  "lastPassLoginPasswordInvalid": {
+    "message": "Enter a valid password"
+  },
+  "lastPassLoginCodeInvalid": {
+    "message": "Enter a valid verification code."
+  },
+  "lastPassLoginPasswordDesc": {
+    "message": "Please enter your LastPass master password."
+  },
+  "lastPassLoginCodeDesc": {
+    "message": "Please enter the verification code below."
+  },
+  "lastPassLoginWaitingForSso": {
+    "message": "Waiting for SSO authentication"
+  },
+  "lastPassLoginWaitingForSsoDesc": {
+    "message": "Once signed in, we’ll continue your import automatically."
+  },
   "importingYourAccount": {
     "message": "Jou rekening word ingevoer..."
+  },
+  "keeperLoginServerLabel": {
+    "message": "Server"
+  },
+  "keeperLoginEmailRequired": {
+    "message": "Email is required."
+  },
+  "keeperLoginEmailInvalid": {
+    "message": "Enter a valid email address."
+  },
+  "keeperLoginUnsupportedTwoFactor": {
+    "message": "Unsupported two-factor method. Switch methods or import manually."
+  },
+  "keeperLoginApprovalMethod": {
+    "message": "Device approval method"
+  },
+  "keeperLoginCodeInvalid": {
+    "message": "Enter a valid verification code."
+  },
+  "keeperLoginCodeResent": {
+    "message": "Resent verification code"
+  },
+  "keeperLoginPushSentDesc": {
+    "message": "Keeper Push notification sent to approved device."
+  },
+  "keeperLoginApprovalMethodDesc": {
+    "message": "Approve this device by selecting a method below."
+  },
+  "keeperLoginEmailCodeDesc": {
+    "message": "Please check your email and enter the verification code below."
+  },
+  "keeperLoginAuthenticatorDesc": {
+    "message": "Please enter the code from your authenticator app."
+  },
+  "keeperLoginSmsDesc": {
+    "message": "Please enter the code sent as a text message."
+  },
+  "keeperLoginPasswordDesc": {
+    "message": "Please enter your Keeper master password."
+  },
+  "keeperLoginDnaSent": {
+    "message": "Keeper DNA sent"
+  },
+  "keeperLoginDnaSentDesc": {
+    "message": "Approve the Keeper DNA notification on your device."
+  },
+  "keeperLoginCancelRequestDesc": {
+    "message": "Your approval request will be canceled. Are you sure you want to proceed?"
+  },
+  "keeperLoginAdminRequestedDesc": {
+    "message": "We’ve sent an admin approval request to your admin."
+  },
+  "keeperLoginPasswordRequired": {
+    "message": "Password is required."
+  },
+  "keeperLoginPasswordInvalid": {
+    "message": "Enter a valid password."
   },
   "lastPassMFARequired": {
     "message": "LastPass multifaktor waarmerking word vereis"
@@ -4704,10 +5602,6 @@
   "browserProfile": {
     "message": "Blaaierprofiel"
   },
-  "seeDetailedInstructions": {
-    "message": "Sien gedetaleerde instruksies op ons help werf by",
-    "description": "This is followed a by a hyperlink to the help website."
-  },
   "importDirectlyFromLastPass": {
     "message": "Voer in direk van LastPass"
   },
@@ -4722,6 +5616,72 @@
   },
   "lastPassYubikeyDesc": {
     "message": "Plass die YubiKey wat met jou LastPass-rekening geassosieer word in jou rekenaar se USB-poort in en raak dan aan die knoppie."
+  },
+  "onePasswordPartialImport": {
+    "message": "$COUNT$ 1Password items or vaults could not be imported",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "onePasswordCheckCredentials": {
+    "message": "An error has occurred. Check your credentials and try again."
+  },
+  "onePasswordOnlyPasswordLogin": {
+    "message": "Only login with password is supported."
+  },
+  "onePasswordOnlyPasswordLoginTryAgain": {
+    "message": "Only login with password is supported. Try again or use a different import method."
+  },
+  "enterValidEmailOrUseDifferentImportMethod": {
+    "message": "Enter a valid email address or use a different import method."
+  },
+  "onePasswordImportError": {
+    "message": "An error has occurred. Try again or use a different import method."
+  },
+  "emailIsRequired": {
+    "message": "Email is required."
+  },
+  "enterValidEmailAddress": {
+    "message": "Enter a valid email address."
+  },
+  "signInAddressIsRequired": {
+    "message": "Sign-in address is required."
+  },
+  "enterValidSignInAddress": {
+    "message": "Enter a valid sign-in address."
+  },
+  "secretKeyIsRequired": {
+    "message": "Secret key is required."
+  },
+  "enterValidSecretKey": {
+    "message": "Enter a valid secret key."
+  },
+  "passwordIsRequired": {
+    "message": "Password is required."
+  },
+  "enterValidVerificationCode": {
+    "message": "Enter a valid verification code."
+  },
+  "signInAddress": {
+    "message": "Sign-in address"
+  },
+  "onePasswordEmail": {
+    "message": "1Password email"
+  },
+  "onePasswordEmailHint": {
+    "message": "Enter the email you use to log in to 1Password"
+  },
+  "secretKey": {
+    "message": "Secret key"
+  },
+  "secretKeyAndPassword": {
+    "message": "Secret key and password"
+  },
+  "secretKeyAndPasswordDesc": {
+    "message": "Your account is secured with a Secret Key and password. You will need to enter both to continue."
   },
   "keeperEmail": {
     "message": "Keeper-e-pos"
@@ -5043,6 +6003,9 @@
     "message": "om ʼn sterk unieke wagwoord te skep",
     "description": "This will be used as part of a larger sentence, broken up to include the generator icon. The full sentence will read 'Use the generator [GENERATOR_ICON] to create a strong unique password'"
   },
+  "biometricUnlockOnRestartTurnedOff": {
+    "message": "Biometric unlock on app restart was turned off. Turn it on again in settings."
+  },
   "biometricsStatusHelptextUnlockNeeded": {
     "message": "Biometriese ontsluiting is nie beskikbaar nie omdat PIN- of wagwoordontsluiting eers vereis word."
   },
@@ -5177,13 +6140,19 @@
     "description": "Deprecated; we shouldn't use a question mark. Use passkeyLogin2 instead."
   },
   "passkeyLogin2": {
-    "message": "Log in with passkey"
+    "message": "Meld aan met passkey"
   },
   "savePasskeyQuestion": {
     "message": "Stoor paswoord?"
   },
   "savePasskey": {
-    "message": "Save passkey"
+    "message": "Stoor passkey"
+  },
+  "chooseCipherForPasskeySave": {
+    "message": "Choose a login to save this passkey to"
+  },
+  "chooseCipherForPasskeyAuth": {
+    "message": "Choose a passkey to log in with"
   },
   "saveNewPasskey": {
     "message": "Stoor as nuwe aanmelding"
@@ -5199,7 +6168,7 @@
     "description": "Deprecated; we shouldn't use a question mark. Use overwritePasskey2 instead."
   },
   "overwritePasskey2": {
-    "message": "Overwrite passkey"
+    "message": "Oorskryf passkey"
   },
   "unableToSavePasskey": {
     "message": "Kan nie paswoord stoor nie"
@@ -5212,6 +6181,21 @@
   },
   "applicationDoesNotSupportDuplicates": {
     "message": "Hierdie toepassing ondersteun nie duplikate nie."
+  },
+  "noPasskeysFoundForThisApplication": {
+    "message": "No passkeys found for this application."
+  },
+  "passkeyNotAllowedForBitwardenVault": {
+    "message": "Passkeys for $DOMAIN$ can't be saved or used in Bitwarden.",
+    "placeholders": {
+      "domain": {
+        "content": "$1",
+        "example": "bitwarden.com"
+      }
+    }
+  },
+  "passkeyNotAllowedForBitwardenVaultDesc": {
+    "message": "Storing the passkey for your Bitwarden account in your vault could lock you out of your account."
   },
   "closeThisWindow": {
     "message": "Maak hierdie venster toe"
@@ -5234,20 +6218,11 @@
   "updateBrowserOrDisableFingerprintDialogMessage": {
     "message": "Die blaaieruitbreiding wat jy gebruik, is verouderd. Werk dit asseblief by of deaktiveer blaaierintegrasie-vingerafdruk-validasie in die rekenaartoep se instellings."
   },
-  "changeAtRiskPassword": {
-    "message": "Verander risiko-wagwoord"
-  },
-  "changeAtRiskPasswordAndAddWebsite": {
-    "message": "Hierdie aanmelding is ʼn risiko en kort ʼn webwerf. Voeg ʼn webwerf by en verander die wagwoord vir sterker sekuriteit."
-  },
   "vulnerablePassword": {
     "message": "Kwesbare wagwoord."
   },
   "changeNow": {
     "message": "Verander nou"
-  },
-  "missingWebsite": {
-    "message": "Webwerf ontbreek"
   },
   "missingPermissions": {
     "message": "Jy het nie die nodige magtigings om hierdie aksie uit te voer nie."
@@ -5593,6 +6568,15 @@
   "showMore": {
     "message": "Wys meer"
   },
+  "showMoreCount": {
+    "message": "Wys nog $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
   "showLess": {
     "message": "Wys minder"
   },
@@ -5627,6 +6611,9 @@
   },
   "enableAutotypeShortcutPreview": {
     "message": "Aktiveer outotik-sneltoets (Funksievoorskou)"
+  },
+  "enableAutotypeGaShortcut": {
+    "message": "Aktiveer outotipe-kortpad"
   },
   "enableAutotypeShortcutDescription": {
     "message": "Maak seker jy is in die korrekte veld voordat jy die sneltoets gebruik om te verhoed dat data op die verkeerde plek ingevul word."
@@ -5871,6 +6858,9 @@
   "chromiumImporterPickerPrompt": {
     "message": "Verleen Toegang"
   },
+  "noBrowserProfilesFound": {
+    "message": "No browser profiles were found"
+  },
   "upgrade": {
     "message": "Gradeer op"
   },
@@ -5946,11 +6936,94 @@
   "noItemsInTrashDesc": {
     "message": "Items wat jy verwyder, sal hier verskyn en na 30 dae permanent verwyder word"
   },
+  "noItemsInTrashDescription": {
+    "message": "Items wat jy skrap, sal hier verskyn en ná 30 dae permanent geskrap word."
+  },
   "noItemsInVault": {
     "message": "Geen items in die kluis"
   },
+  "noItemsInMyVault": {
+    "message": "Geen items in My kluis"
+  },
+  "noItemsInOrganizationVault": {
+    "message": "Geen items in $VAULT_NAME$",
+    "placeholders": {
+      "vault_name": {
+        "content": "$1",
+        "example": "Acme Corp"
+      }
+    }
+  },
+  "noItemsInSharedFolder": {
+    "message": "Geen items in $VAULT_NAME$",
+    "placeholders": {
+      "vault_name": {
+        "content": "$1",
+        "example": "Engineering"
+      }
+    }
+  },
+  "noItemsInFolder": {
+    "message": "No items in $FOLDER_NAME$",
+    "description": "Title of the empty state shown on one of the user's own folders when it holds no items.",
+    "placeholders": {
+      "folder_name": {
+        "content": "$1",
+        "example": "Banking"
+      }
+    }
+  },
+  "emptyFolderDescription": {
+    "message": "Add items to this folder. You’ll be able to quickly access them using vault filters.",
+    "description": "Description of the empty state shown on one of the user's own folders when it holds no items."
+  },
+  "emptyMyItems": {
+    "message": "Geen items in My items"
+  },
+  "noItemsInVaults": {
+    "message": "Jou kluise is leeg"
+  },
+  "noItemsMatchSelectedFilters": {
+    "message": "Geen items pas by gekose filters"
+  },
+  "noItemsMatchSearchTerm": {
+    "message": "Geen items pas by \"$SEARCH_TERM$\"",
+    "placeholders": {
+      "search_term": {
+        "content": "$1",
+        "example": "example search"
+      }
+    }
+  },
   "emptyVaultDescription": {
     "message": "Die kluis beskerm meer as net jou wagwoorde. Stoor veilige aanmeldings, ID's, kaarte en notas veilig hier."
+  },
+  "emptySharedFolderDescription": {
+    "message": "Voeg items by hierdie gedeelde vouer en gee dan toegang aan ander $VAULT_NAME$-lede.",
+    "placeholders": {
+      "vault_name": {
+        "content": "$1",
+        "example": "Acme Corp"
+      }
+    }
+  },
+  "emptyMyItemsDescription": {
+    "message": "My items is jou private ruimte om items te stoor wat deur $VAULT_NAME$ besit bly, maar nie vir ander lede sigbaar is nie.",
+    "placeholders": {
+      "vault_name": {
+        "content": "$1",
+        "example": "Acme Corp"
+      }
+    }
+  },
+  "youHaveNoFoldersV2": {
+    "message": "You have no folders"
+  },
+  "emptyFoldersDescriptionV2": {
+    "message": "Use folders to organize vault items. They're just for you. No one else will see or use them."
+  },
+  "emptyVaultsDescription": {
+    "message": "Voeg aanmeldings, ID's, kaarte en ander items by om te begin."
   },
   "emptyFavorites": {
     "message": "Jy het nog geen items as gunsteling gemerk nie"
@@ -5963,6 +7036,55 @@
   },
   "clearFiltersOrTryAnother": {
     "message": "Maak filters skoon of probeer ʼn ander soekterm"
+  },
+  "noSharedFoldersAdded": {
+    "message": "Geen gedeelde vouers bygevoeg"
+  },
+  "noSharedFoldersAddedDescription": {
+    "message": "Voeg 'n gedeelde vouer by om kluisitems veilig met ander lede te deel."
+  },
+  "pinned": {
+    "message": "Pinned",
+    "description": "Heading of the side navigation section that lists the shared folders the user pinned."
+  },
+  "pinToSidebar": {
+    "message": "Pin to sidebar",
+    "description": "Menu action that adds a shared folder to the Pinned section of the side navigation."
+  },
+  "unpinFromSidebar": {
+    "message": "Unpin from sidebar",
+    "description": "Menu action that removes a shared folder from the Pinned section of the side navigation."
+  },
+  "folderPinnedToSidebar": {
+    "message": "$NAME$ pinned to sidebar",
+    "description": "Toast shown after a shared folder is added to the Pinned section of the side navigation. $NAME$ is the name of the folder.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Engineering"
+      }
+    }
+  },
+  "folderUnpinnedFromSidebar": {
+    "message": "$NAME$ unpinned from sidebar",
+    "description": "Toast shown after a shared folder is removed from the Pinned section of the side navigation. $NAME$ is the name of the folder.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Engineering"
+      }
+    }
+  },
+  "pinnedEmptyStatePrefix": {
+    "message": "Find a shared folder in this vault and select",
+    "description": "First part of the hint shown in an empty Pinned section. 'Pin to sidebar' is shown in bold after it, followed by the pinnedEmptyStateSuffix string."
+  },
+  "pinnedEmptyStateSuffix": {
+    "message": "from the Options menu.",
+    "description": "Last part of the hint shown in an empty Pinned section. It follows the bold 'Pin to sidebar' text."
+  },
+  "noPinnedFoldersTooltip": {
+    "message": "Pin shared folders to the sidebar to filter them here."
   },
   "sendPasswordHelperText": {
     "message": "Individue sal die wagwoord moet invoer om hierdie Send te bekyk",
@@ -6321,9 +7443,9 @@
       }
     }
   },
-  "confirmPasskeyRegistrationMacOS": {
-    "message": "create a new $RPID$ passkey for $USERNAME$",
-    "description": "Prompt for the user to create a passkey. Shown in macOS Touch ID prompt as \"Bitwarden is trying to {message}.\", so sentence capitalization and ending punctuation should be omitted.",
+  "confirmPasskeyRegistrationMfaMacOS": {
+    "message": "create a new $RPID$ passkey for $USERNAME$. $RPID$ is requesting this check for MFA",
+    "description": "Prompt for the user to create a passkey. Shown in macOS Touch ID prompt as \"Bitwarden is trying to {message}.\", so the first sentence should omit capitalization and the final sentence should omit ending punctuation.",
     "placeholders": {
       "rpId": {
         "content": "$1",
@@ -6335,9 +7457,9 @@
       }
     }
   },
-  "confirmPasskeyOverwriteMacOS": {
-    "message": "overwrite a $RPID$ passkey for $USERNAME$",
-    "description": "Prompt for the user to overwrite an existing passkey. Shown in macOS Touch ID prompt as \"Bitwarden is trying to {message}.\", so sentence capitalization and ending punctuation should be omitted.",
+  "confirmPasskeyOverwriteMfaMacOS": {
+    "message": "overwrite a $RPID$ passkey for $USERNAME$. $RPID$ is requesting this check for MFA",
+    "description": "Prompt for the user to overwrite an existing passkey. Shown in macOS Touch ID prompt as \"Bitwarden is trying to {message}.\", so the first sentence should omit capitalization and the final sentence should omit ending punctuation.",
     "placeholders": {
       "rpId": {
         "content": "$1",
@@ -6349,9 +7471,9 @@
       }
     }
   },
-  "confirmPasskeyAssertionMacOS": {
-    "message": "sign in as $USERNAME$ with your $RPID$ passkey",
-    "description": "Prompt for the user to use a passkey. Shown in macOS Touch ID prompt as \"Bitwarden is trying to {message}.\", so sentence capitalization and ending punctuation should be omitted.",
+  "confirmPasskeyAssertionMfaMacOS": {
+    "message": "sign in as $USERNAME$ with your $RPID$ passkey. $RPID$ is requesting this check for MFA",
+    "description": "Prompt for the user to use a passkey. Shown in macOS Touch ID prompt as \"Bitwarden is trying to {message}.\", so the first sentence should omit capitalization and the final sentence should omit ending punctuation.",
     "placeholders": {
       "rpId": {
         "content": "$1",
@@ -6363,8 +7485,8 @@
       }
     }
   },
-  "confirmPasskeyRegistrationWindows": {
-    "message": "Verify it's you to create a new $RPID$ passkey for $USERNAME$.",
+  "confirmPasskeyRegistrationMfaWindows": {
+    "message": "Verify it's you to create a new $RPID$ passkey for $USERNAME$. $RPID$ is requesting this check for MFA.",
     "description": "Prompt in Windows Hello to register a new passkey.",
     "placeholders": {
       "rpId": {
@@ -6377,8 +7499,8 @@
       }
     }
   },
-  "confirmPasskeyOverwriteWindows": {
-    "message": "Verify it's you to overwrite a $RPID$ passkey for $USERNAME$.",
+  "confirmPasskeyOverwriteMfaWindows": {
+    "message": "Verify it's you to overwrite a $RPID$ passkey for $USERNAME$. $RPID$ is requesting this check for MFA.",
     "description": "Prompt in Windows Hello to overwrite an existing passkey.",
     "placeholders": {
       "rpId": {
@@ -6391,8 +7513,8 @@
       }
     }
   },
-  "confirmPasskeyAssertionWindows": {
-    "message": "Verify it's you to sign in as $USERNAME$ with your $RPID$ passkey.",
+  "confirmPasskeyAssertionMfaWindows": {
+    "message": "Verify it's you to sign in as $USERNAME$ with your $RPID$ passkey. $RPID$ is requesting this check for MFA.",
     "description": "Prompt in Windows Hello to use an existing passkey.",
     "placeholders": {
       "rpId": {
@@ -6404,5 +7526,237 @@
         "example": "user@acme.com"
       }
     }
+  },
+  "permissions": {
+    "message": "Regte"
+  },
+  "viewItems": {
+    "message": "Bekyk items"
+  },
+  "viewItemsHidePass": {
+    "message": "Bekyk items, verborge wagwoorde"
+  },
+  "editItems": {
+    "message": "Wysig items"
+  },
+  "editItemsHidePass": {
+    "message": "Wysig items, verborge wagwoorde"
+  },
+  "shareVerb": {
+    "message": "Deel"
+  },
+  "peopleWhoCanView": {
+    "message": "Mense wat kan sien",
+    "description": "Heading for the section listing who has access to view a shared vault item"
+  },
+  "shareEmailVerificationDescription": {
+    "message": "Nadat hierdie skakel gedeel is, sal ontvangers hul e-pos met 'n kode moet verifieer om die item te sien.",
+    "description": "Description explaining that recipients must verify their email before viewing a shared vault item"
+  },
+  "shareLinkExpiryHint": {
+    "message": "Hierdie skakel verval ná hierdie datum, maar ontvangers kan voorheen gedeelde inligting behou. Herproduseer die geloofsbrief om toegang te herroep.",
+    "description": "Hint text explaining share link expiry behavior and how to revoke access"
+  },
+  "linkExpiresAfter": {
+    "message": "Skakel verval ná",
+    "description": "Label for the expiry duration select field when creating a share link"
+  },
+  "oneTimeShare": {
+    "message": "Eenmalige deel",
+    "description": "Checkbox label indicating the share link can only be viewed once by the recipient"
+  },
+  "activeLinks": {
+    "message": "Aktiewe skakels",
+    "description": "Heading for the list of currently active share links for a vault item"
+  },
+  "linkCopiedToClipboard": {
+    "message": "Skakel na knipbord gekopieer",
+    "description": "Toast message shown when a share link URL is successfully copied to the clipboard"
+  },
+  "linkSaveFailed": {
+    "message": "Kon nie deelskakel skep nie",
+    "description": "Toast message shown after a new share link fails to create"
+  },
+  "linkSavedAndCopied": {
+    "message": "Skakel gestoor en na knipbord gekopieer",
+    "description": "Toast message shown after a new share link is created and its URL is copied to the clipboard"
+  },
+  "linkSavedCopyFailed": {
+    "message": "Kon nie deelskakel na knipbord kopieer nie",
+    "description": "Toas message shown after a new share link is created but we were unable to copy it to the clipboard"
+  },
+  "shareLinkDeleted": {
+    "message": "Deelskakel geskrap",
+    "description": "Toast message shown when an active share link is successfully deleted"
+  },
+  "shareLinkDeleteFailed": {
+    "message": "Kon nie deelskakel skrap nie",
+    "description": "Toast message shown when an active share link deletion is unsuccessful"
+  },
+  "shareViaLink": {
+    "message": "Deel via skakel",
+    "description": "Menu option to share a vault item via a shareable link"
+  },
+  "itemSendTitle": {
+    "message": "Deel vir kluisitem $ITEM$",
+    "placeholders": {
+      "item": {
+        "content": "$1",
+        "example": "Test Login"
+      }
+    }
+  },
+  "shareLinkExpires": {
+    "message": "Verval",
+    "description": "Label preceding the expiration date of an active share link."
+  },
+  "expires": {
+    "message": "Verval",
+    "description": "Label for the expiration date of an access token."
+  },
+  "unknownCipher": {
+    "message": "Onbekende item, jy sal dalk toestemming moet versoek om toegang tot hierdie item te kry."
+  },
+  "viewSharedItem": {
+    "message": "View shared item"
+  },
+  "copyShareLink": {
+    "message": "Copy share link"
+  },
+  "unableToDetermineItemId": {
+    "message": "Unable to determine item ID"
+  },
+  "newExperienceDialogTitle": {
+    "message": "Bitwarden has a new look",
+    "description": "Title of the dialog that introduces the redesigned vault to existing users."
+  },
+  "newExperienceDialogDesc": {
+    "message": "Better experience, same trusted security. The Bitwarden vault has been redesigned based on your feedback, so things are easier to find and work like you'd expect.",
+    "description": "Body copy of the dialog that introduces the redesigned vault to existing users."
+  },
+  "newExperienceDialogImgAlt": {
+    "message": "A preview of the redesigned Bitwarden vault.",
+    "description": "Alt text for the screenshot shown in the dialog that introduces the redesigned vault."
+  },
+  "exploreTheNewVault": {
+    "message": "Explore the new vault",
+    "description": "Button that closes the dialog introducing the redesigned vault."
+  },
+  "customize": {
+    "message": "Customize"
+  },
+  "customizeYourView": {
+    "message": "Customize your view"
+  },
+  "showColumns": {
+    "message": "Show columns"
+  },
+  "resetToDefault": {
+    "message": "Reset to default"
+  },
+  "coachmarkImportTitle": {
+    "message": "Quickly import your passwords"
+  },
+  "coachmarkImportDescription": {
+    "message": "Did you have a password manager before? You can import a CSV of existing logins and other data into your vault."
+  },
+  "coachmarkAddItemTitle": {
+    "message": "Add an item"
+  },
+  "coachmarkAddItemDescription": {
+    "message": "Add new passwords, notes, and other info to your vault. Everything is protected with end-to-end encryption."
+  },
+  "coachmarkShareWithCollectionsTitle": {
+    "message": "Safely share items with others"
+  },
+  "coachmarkShareWithCollectionsDescription": {
+    "message": "By moving an item into a collection, you can securely share it with other people in your organization."
+  },
+  "coachmarkShareWithSharedFoldersDescription": {
+    "message": "By moving an item into a shared folder, you can securely share it with other vault members."
+  },
+  "coachmarkMonitorSecurityTitle": {
+    "message": "Monitor your password security"
+  },
+  "coachmarkMonitorSecurityDescription": {
+    "message": "Keep the security of your vault items strong by checking reports for vulnerabilities."
+  },
+  "whatsNew": {
+    "message": "What's new"
+  },
+  "tourTheNewVaultDescription": {
+    "message": "With updated navigation and design, it's easier than ever to find what you need."
+  },
+  "coachmarkVaultListTitle": {
+    "message": "All your vaults in one place"
+  },
+  "coachmarkVaultListDescriptionV2": {
+    "message": "Quickly see personal items or items in a vault you share with others."
+  },
+  "coachmarkSharedFoldersTitle": {
+    "message": "Collections and folders have new names"
+  },
+  "coachmarkSharedFoldersDescription": {
+    "message": "Same features, clearer names. Collections are now called shared folders. Folders are now My folders."
+  },
+  "coachmarkFiltersTitle": {
+    "message": "Mix and match filters"
+  },
+  "coachmarkFiltersDescription": {
+    "message": "Select multiple filters at once to narrow down to exactly the results you want. They'll stay applied even when you navigate away."
+  },
+  "coachmarkStepsIndicator": {
+    "message": "$CURRENT$ of $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "1"
+      },
+      "total": {
+        "content": "$2",
+        "example": "4"
+      }
+    }
+  },
+  "httpAuthenticationSettingLabel": {
+    "message": "Autofill browser login prompts",
+    "description": "Label for the item setting that lets the extension respond to HTTP basic authentication prompts shown by the browser"
+  },
+  "httpAuthenticationSettingDescription": {
+    "message": "Respond to basic HTTP authentication prompts from websites that match this login item."
+  },
+  "openHttpAuthenticationHelpArticleSignpost": {
+    "message": "Open help article on autofilling browser login prompts"
+  },
+  "httpAuthenticationSettingWarning": {
+    "message": "Websites can trigger these prompts without your knowledge, which may expose your credentials.",
+    "description": "Warning shown beneath the item setting that lets the extension respond to HTTP basic authentication prompts"
+  },
+  "httpAuthenticationSettingRequiresMatchDetectionGuidance": {
+    "message": "To use this setting, choose a match detection option other than \"Default\" for each website of this login item."
+  },
+  "turnOnHttpAuthenticationTitle": {
+    "message": "Turn on autofill for browser login prompts?"
+  },
+  "turnOnHttpAuthenticationRepromptConflictPrompt": {
+    "message": "Master password re-prompt will be turned off for this item. Both settings can't be on at the same time."
+  },
+  "turnOnPasswordRepromptTitle": {
+    "message": "Turn on master password re-prompt?"
+  },
+  "turnOnPasswordRepromptHttpAuthenticationConflictPrompt": {
+    "message": "Autofill for browser login prompts will be turned off for this item. Both settings can't be on at the same time."
+  },
+  "useDefaultMatchDetectionTitle": {
+    "message": "Use default match detection?"
+  },
+  "useDefaultMatchDetectionHttpAuthenticationConflictPrompt": {
+    "message": "Websites using default match detection can't be used with browser login prompts. Autofill for browser login prompts will be turned off for this item."
+  },
+  "httpAuthenticationTurnedOffTitle": {
+    "message": "Autofill for browser login prompts turned off"
+  },
+  "httpAuthenticationTurnedOffNotice": {
+    "message": "This item has master password re-prompt turned on, so autofill for browser login prompts was turned off. Save the item to keep this change."
   }
 }

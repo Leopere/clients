@@ -25,6 +25,8 @@ jest.mock("../utils", () => {
   return {
     ...utils,
     debounce: jest.fn((fn) => fn),
+    // Implementation is (re)installed per test; see the top-level beforeEach.
+    sendExtensionMessage: jest.fn(),
     // Call-through spy so scheduling tests can assert on it without changing behavior.
     requestIdleCallbackPolyfill: jest.fn((cb, opts) => utils.requestIdleCallbackPolyfill(cb, opts)),
   };
@@ -41,6 +43,9 @@ const mockLoginForm = `
 
 const waitForIdleCallback = () => new Promise((resolve) => globalThis.requestIdleCallback(resolve));
 
+const { sendExtensionMessage: actualSendExtensionMessage } =
+  jest.requireActual<typeof autofillUtils>("../utils");
+
 describe("CollectAutofillContentService", () => {
   const mockQuerySelectorAll = mockQuerySelectorAllDefinedCall();
   const domElementVisibilityService = new DomElementVisibilityService();
@@ -54,7 +59,28 @@ describe("CollectAutofillContentService", () => {
   let collectAutofillContentService: CollectAutofillContentService;
   const mockIntersectionObserver = mock<IntersectionObserver>();
 
+  /**
+   * Opts into the page-controlled `data-bwignore` and `data-bwautofill` attributes,
+   * which are unhonored by default.
+   */
+  const honorBitwardenAttributes = () => {
+    collectAutofillContentService["honorBitwardenIgnoreAttribute"] = true;
+    collectAutofillContentService["honorBitwardenAutofillAttribute"] = true;
+    collectAutofillContentService["formFieldQueryString"] =
+      collectAutofillContentService["buildFormFieldQueryString"]();
+  };
+
   beforeEach(() => {
+    // The constructor's one-time settings fetch runs before any per-instance spy can be
+    // installed, so that one command is answered here. Everything else calls through,
+    // since the chrome.runtime.sendMessage stub never invokes its callback.
+    jest
+      .mocked(autofillUtils.sendExtensionMessage)
+      .mockImplementation(async (command: string, options?: Record<string, any>) =>
+        command === "getBitwardenAutofillAttributeSettings"
+          ? null
+          : actualSendExtensionMessage(command, options),
+      );
     globalThis.requestIdleCallback = jest.fn((cb, options) => setTimeout(cb, 100));
     globalThis.cancelIdleCallback = jest.fn((id) => clearTimeout(id));
     document.body.innerHTML = mockLoginForm;
@@ -280,6 +306,25 @@ describe("CollectAutofillContentService", () => {
       expect(autofillField.viewable).toBe(true);
       expect(isElementViewableSpy).toHaveBeenCalledWith(fieldElement);
       expect(setupAutofillOverlayListenerOnFieldSpy).toHaveBeenCalled();
+    });
+
+    it("waits for the cached field visibility recheck before returning page details", async () => {
+      document.body.innerHTML = `<form><input id="password" type="password" /></form>`;
+      const passwordInput = document.getElementById(
+        "password",
+      ) as ElementWithOpId<FormFieldElement>;
+      const autofillField = createAutofillFieldMock({ opid: "__0", viewable: false });
+      collectAutofillContentService["domRecentlyMutated"] = false;
+      collectAutofillContentService["autofillFieldElements"] = new Map([
+        [passwordInput, autofillField],
+      ]);
+      jest
+        .spyOn(collectAutofillContentService["domElementVisibilityService"], "isElementViewable")
+        .mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(true), 0)));
+
+      const pageDetails = await collectAutofillContentService.getPageDetails();
+
+      expect(pageDetails.fields[0].viewable).toBe(true);
     });
 
     it("returns an object containing information about the current page as well as autofill data for the forms and fields of the page", async () => {
@@ -1111,6 +1156,10 @@ describe("CollectAutofillContentService", () => {
   });
 
   describe("getAutofillFieldElements", () => {
+    beforeEach(() => {
+      honorBitwardenAttributes();
+    });
+
     it("returns all form elements from the targeted document if no limit is set", () => {
       document.body.innerHTML = `
       <div id="root">
@@ -1303,6 +1352,79 @@ describe("CollectAutofillContentService", () => {
     });
   });
 
+  describe("Bitwarden autofill attribute settings", () => {
+    const attributeMarkup = `
+      <div>
+        <input type="text" id="ignored-input" data-bwignore />
+        <textarea id="ignored-textarea" data-bwignore></textarea>
+        <select id="ignored-select" data-bwignore></select>
+        <span id="marked-span" data-bwautofill></span>
+      </div>
+    `;
+
+    it("collects `data-bwignore` fields and skips `data-bwautofill` spans by default", () => {
+      document.body.innerHTML = attributeMarkup;
+
+      const formElements = collectAutofillContentService["getAutofillFieldElements"]();
+
+      expect(formElements).toEqual([
+        document.getElementById("ignored-input"),
+        document.getElementById("ignored-textarea"),
+        document.getElementById("ignored-select"),
+      ]);
+    });
+
+    it("skips `data-bwignore` fields and collects `data-bwautofill` spans once both settings are honored", () => {
+      document.body.innerHTML = attributeMarkup;
+      honorBitwardenAttributes();
+
+      const formElements = collectAutofillContentService["getAutofillFieldElements"]();
+
+      expect(formElements).toEqual([document.getElementById("marked-span")]);
+    });
+
+    it("applies each setting independently", () => {
+      document.body.innerHTML = attributeMarkup;
+      collectAutofillContentService["honorBitwardenIgnoreAttribute"] = true;
+      collectAutofillContentService["formFieldQueryString"] =
+        collectAutofillContentService["buildFormFieldQueryString"]();
+
+      expect(collectAutofillContentService["getAutofillFieldElements"]()).toEqual([]);
+    });
+
+    it("adopts the fetched settings and rebuilds the field query string", async () => {
+      jest.mocked(autofillUtils.sendExtensionMessage).mockResolvedValue({
+        result: {
+          honorBitwardenIgnoreAttribute: true,
+          honorBitwardenAutofillAttribute: true,
+        },
+      });
+
+      await collectAutofillContentService["fetchAndSetBitwardenAttributeSettings"]();
+
+      expect(collectAutofillContentService["honorBitwardenIgnoreAttribute"]).toBe(true);
+      expect(collectAutofillContentService["honorBitwardenAutofillAttribute"]).toBe(true);
+      expect(collectAutofillContentService["formFieldQueryString"]).toContain(
+        "span[data-bwautofill]",
+      );
+      expect(collectAutofillContentService["formFieldQueryString"]).toContain(
+        ":not([data-bwignore])",
+      );
+    });
+
+    it("leaves both attributes unhonored when the settings fetch fails", async () => {
+      jest
+        .mocked(autofillUtils.sendExtensionMessage)
+        .mockRejectedValue(new Error("no receiving end"));
+
+      await collectAutofillContentService["fetchAndSetBitwardenAttributeSettings"]();
+
+      expect(collectAutofillContentService["honorBitwardenIgnoreAttribute"]).toBe(false);
+      expect(collectAutofillContentService["honorBitwardenAutofillAttribute"]).toBe(false);
+      expect(collectAutofillContentService["formFieldQueryString"]).not.toContain("data-bw");
+    });
+  });
+
   describe("buildAutofillFieldItem", () => {
     it("returns a `null` value if the field is a child of a `button[type='submit']`", async () => {
       const usernameField = {
@@ -1406,10 +1528,30 @@ describe("CollectAutofillContentService", () => {
       expect(collectAutofillContentService["getAutofillFieldMaxLength"]).not.toHaveBeenCalled();
       expect(
         collectAutofillContentService["domElementVisibilityService"].isElementViewable,
-      ).not.toHaveBeenCalled();
+      ).toHaveBeenCalledWith(usernameInput);
       expect(collectAutofillContentService["getPropertyOrAttribute"]).not.toHaveBeenCalled();
       expect(collectAutofillContentService["getElementValue"]).not.toHaveBeenCalled();
       expect(autofillFieldItem).toEqual(existingFieldData);
+    });
+
+    it("rechecks the visibility of an existing autofill field item", async () => {
+      document.body.innerHTML = `<form><input id="password" type="password" /></form>`;
+      const passwordInput = document.getElementById(
+        "password",
+      ) as ElementWithOpId<FillableFormFieldElement>;
+      const existingFieldData = createAutofillFieldMock({ viewable: false });
+      collectAutofillContentService["autofillFieldElements"].set(passwordInput, existingFieldData);
+      jest
+        .spyOn(collectAutofillContentService["domElementVisibilityService"], "isElementViewable")
+        .mockResolvedValue(true);
+
+      const autofillFieldItem = await collectAutofillContentService["buildAutofillFieldItem"](
+        passwordInput,
+        0,
+      );
+
+      expect(autofillFieldItem).toBe(existingFieldData);
+      expect(autofillFieldItem?.viewable).toBe(true);
     });
 
     it("returns the AutofillField base data values without the field labels or input values if the passed element is a span element", async () => {
@@ -3533,6 +3675,70 @@ describe("CollectAutofillContentService", () => {
     });
   });
 
+  describe("handleOpacityTransitionEnd", () => {
+    let isElementViewableSpy: jest.SpyInstance;
+    let setupAutofillOverlayListenerOnFieldSpy: jest.SpyInstance;
+    let containerElement: HTMLDivElement;
+    let formFieldElement: ElementWithOpId<FormFieldElement>;
+    let autofillField: AutofillField;
+
+    beforeEach(() => {
+      isElementViewableSpy = jest.spyOn(
+        collectAutofillContentService["domElementVisibilityService"],
+        "isElementViewable",
+      );
+      setupAutofillOverlayListenerOnFieldSpy = jest.spyOn(
+        collectAutofillContentService["autofillOverlayContentService"],
+        "setupOverlayListeners",
+      );
+      containerElement = document.createElement("div");
+      formFieldElement = document.createElement("input") as ElementWithOpId<FormFieldElement>;
+      containerElement.appendChild(formFieldElement);
+      document.body.appendChild(containerElement);
+      autofillField = mock<AutofillField>({ viewable: false });
+      collectAutofillContentService["autofillFieldElements"].set(formFieldElement, autofillField);
+    });
+
+    it("ignores transitions of properties other than opacity", async () => {
+      const event = { propertyName: "transform", target: containerElement };
+
+      await collectAutofillContentService["handleOpacityTransitionEnd"](
+        event as unknown as TransitionEvent,
+      );
+
+      expect(isElementViewableSpy).not.toHaveBeenCalled();
+    });
+
+    it("skips setting up the overlay listeners on a field that is still not viewable", async () => {
+      const event = { propertyName: "opacity", target: containerElement };
+      isElementViewableSpy.mockResolvedValueOnce(false);
+
+      await collectAutofillContentService["handleOpacityTransitionEnd"](
+        event as unknown as TransitionEvent,
+      );
+
+      expect(isElementViewableSpy).toHaveBeenCalledWith(formFieldElement);
+      expect(autofillField.viewable).toBe(false);
+      expect(setupAutofillOverlayListenerOnFieldSpy).not.toHaveBeenCalled();
+    });
+
+    it("sets up the overlay listeners on a non-viewable field within the transitioned element once it becomes viewable", async () => {
+      const event = { propertyName: "opacity", target: containerElement };
+      isElementViewableSpy.mockResolvedValueOnce(true);
+
+      await collectAutofillContentService["handleOpacityTransitionEnd"](
+        event as unknown as TransitionEvent,
+      );
+
+      expect(autofillField.viewable).toBe(true);
+      expect(setupAutofillOverlayListenerOnFieldSpy).toHaveBeenCalledWith(
+        formFieldElement,
+        autofillField,
+        expect.anything(),
+      );
+    });
+  });
+
   describe("setupOverlayOnField", () => {
     it("executes immediately on first call then debounces subsequent rapid calls", () => {
       const formFieldElement = document.createElement("input") as ElementWithOpId<FormFieldElement>;
@@ -3813,6 +4019,89 @@ describe("CollectAutofillContentService", () => {
 
       expect(collectAutofillContentService["pendingTopLayerTargets"].has(dialog)).toBe(true);
     });
+
+    it("tracks a top-layer candidate nested below an added node as a pending target", () => {
+      const container = document.createElement("div");
+      const wrapper = document.createElement("div");
+      const nestedPopover = document.createElement("div");
+      nestedPopover.setAttribute("popover", "manual");
+      wrapper.appendChild(nestedPopover);
+      container.appendChild(wrapper);
+      document.body.appendChild(container);
+      const mutation: MutationRecord = {
+        type: "childList",
+        addedNodes: container.childNodes,
+        attributeName: null,
+        attributeNamespace: null,
+        nextSibling: null,
+        oldValue: null,
+        previousSibling: null,
+        removedNodes: document.querySelectorAll("nothing-matches-this-selector"),
+        target: document.body,
+      };
+
+      collectAutofillContentService["handleMutationObserverMutation"]([mutation]);
+
+      expect(collectAutofillContentService["pendingTopLayerTargets"].has(nestedPopover)).toBe(true);
+    });
+  });
+
+  describe("top layer candidate ownership", () => {
+    let inlineMenuElement: HTMLDivElement;
+    let pagePopoverElement: HTMLDivElement;
+
+    beforeEach(() => {
+      // Firefox renders the inline menu as plain `div` elements, matching common page popovers
+      inlineMenuElement = document.createElement("div");
+      inlineMenuElement.setAttribute("popover", "manual");
+      pagePopoverElement = document.createElement("div");
+      pagePopoverElement.setAttribute("popover", "manual");
+      jest
+        .spyOn(autofillOverlayContentService, "isElementInlineMenu")
+        .mockImplementation((element) => element === inlineMenuElement);
+    });
+
+    it("listens to a page popover that shares the inline menu tag name", () => {
+      expect(
+        collectAutofillContentService["shouldListenToTopLayerCandidate"](pagePopoverElement),
+      ).toBe(true);
+    });
+
+    it("does not listen to the inline menu elements", () => {
+      expect(
+        collectAutofillContentService["shouldListenToTopLayerCandidate"](inlineMenuElement),
+      ).toBe(false);
+    });
+
+    it("refreshes the inline menu layer position when a page popover with the same tag name opens", () => {
+      jest.useFakeTimers();
+      const refreshMenuLayerPositionSpy = jest
+        .spyOn(autofillOverlayContentService, "refreshMenuLayerPosition")
+        .mockImplementation();
+
+      collectAutofillContentService["setupTopLayerCandidateListener"](pagePopoverElement);
+      expect(refreshMenuLayerPositionSpy).toHaveBeenCalledTimes(1);
+
+      const toggleEvent = new Event("toggle");
+      Object.defineProperty(toggleEvent, "newState", { value: "open" });
+      pagePopoverElement.dispatchEvent(toggleEvent);
+      jest.advanceTimersByTime(100);
+
+      expect(refreshMenuLayerPositionSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not set up a listener for the inline menu elements", () => {
+      const refreshMenuLayerPositionSpy = jest
+        .spyOn(autofillOverlayContentService, "refreshMenuLayerPosition")
+        .mockImplementation();
+
+      collectAutofillContentService["setupTopLayerCandidateListener"](inlineMenuElement);
+
+      expect(refreshMenuLayerPositionSpy).not.toHaveBeenCalled();
+      expect(collectAutofillContentService["topLayerListenedElements"].has(inlineMenuElement)).toBe(
+        false,
+      );
+    });
   });
 
   describe("childList gate is wired into mutation handling", () => {
@@ -3900,6 +4189,10 @@ describe("CollectAutofillContentService", () => {
   describe("mutationAddsOrRemovesFormField (relevance gate)", () => {
     // Containers we append to body for real NodeList construction; torn down after each test.
     const createdContainers: HTMLElement[] = [];
+
+    beforeEach(() => {
+      honorBitwardenAttributes();
+    });
 
     const makeContainer = (): HTMLElement => {
       const container = document.createElement("div");

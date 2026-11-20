@@ -41,12 +41,14 @@ import {
   BadgeModule,
   ButtonModule,
   CheckboxModule,
+  CopyClickDirective,
   DIALOG_DATA,
   DialogConfig,
   DialogModule,
   DialogRef,
   DialogService,
   FormFieldModule,
+  IconButtonModule,
   IconComponent,
   LinkModule,
   MenuModule,
@@ -100,10 +102,12 @@ import { NestedCheckboxComponent } from "../member-dialog/nested-checkbox.compon
     BadgeModule,
     ButtonModule,
     CheckboxModule,
+    CopyClickDirective,
     DatePipe,
     DialogModule,
     FormFieldModule,
     I18nPipe,
+    IconButtonModule,
     IconComponent,
     LinkModule,
     MenuModule,
@@ -146,12 +150,13 @@ export class EditMemberDialogComponent {
   readonly isRevoked = signal(false);
   readonly showNoMasterPasswordWarning = signal(false);
   protected readonly tabIndex = signal<number>(this.params.initialTab);
-  protected readonly detailsTabEnabled = toSignal(
-    from(this.configService.getFeatureFlag(FeatureFlag.PM28365_ChangeMemberEmail)),
-  );
 
   protected readonly privilegedControlsEnabled = toSignal(
     from(this.configService.getFeatureFlag(FeatureFlag.Pam)),
+  );
+
+  protected readonly rotationEnabled = toSignal(
+    from(this.configService.getFeatureFlag(FeatureFlag.PamAccessConnector)),
   );
 
   protected readonly emailEditable = computed(
@@ -208,6 +213,8 @@ export class EditMemberDialogComponent {
     managePolicies: false,
     manageUsers: false,
     manageResetPassword: false,
+    manageAccessRules: false,
+    manageRotation: false,
   });
 
   private readonly formTypeValue = toSignal(this.formGroup.controls.type.valueChanges, {
@@ -386,6 +393,8 @@ export class EditMemberDialogComponent {
         managePolicies: userDetails.permissions.managePolicies,
         manageUsers: userDetails.permissions.manageUsers,
         manageResetPassword: userDetails.permissions.manageResetPassword,
+        manageAccessRules: userDetails.permissions.manageAccessRules,
+        manageRotation: userDetails.permissions.manageRotation,
         manageAllCollectionsGroup: allCollectionsPermissions,
       });
     }
@@ -451,6 +460,8 @@ export class EditMemberDialogComponent {
       managePolicies: this.permissionsGroup.value.managePolicies ?? undefined,
       manageUsers: this.permissionsGroup.value.manageUsers ?? undefined,
       manageResetPassword: this.permissionsGroup.value.manageResetPassword ?? undefined,
+      manageAccessRules: this.permissionsGroup.value.manageAccessRules ?? undefined,
+      manageRotation: this.permissionsGroup.value.manageRotation ?? undefined,
       createNewCollections:
         this.permissionsGroup.value.manageAllCollectionsGroup?.createNewCollections ?? undefined,
       editAnyCollection:
@@ -530,14 +541,10 @@ export class EditMemberDialogComponent {
     this.formGroup.markAllAsTouched();
 
     if (this.formGroup.invalid) {
-      const detailsTab = this.detailsTabEnabled() ? MemberDialogTab.Details : MemberDialogTab.Role;
-      if (this.tabIndex() !== detailsTab) {
-        const tabName = this.detailsTabEnabled()
-          ? this.i18nService.t("details")
-          : this.i18nService.t("role");
+      if (this.tabIndex() !== MemberDialogTab.Details) {
         this.toastService.showToast({
           variant: "error",
-          message: this.i18nService.t("fieldOnTabRequiresAttention", tabName),
+          message: this.i18nService.t("fieldOnTabRequiresAttention", this.i18nService.t("details")),
         });
       }
       return;

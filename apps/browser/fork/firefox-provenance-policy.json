@@ -64,17 +64,17 @@
     "icon128.png": "b81651fe26fed6447a90ea737ac511fca02e93863550219bff156be21c324e5e"
   },
   "reviewedIconFontSha256": {
-    ".svg": "97dc08aa4fdc4bcc025a2f0715ae7dfc91dcc25affda1687c6ebe1128d7b2b10",
-    ".ttf": "ba88717981910deadb9d694affbac4c1cd3658a989dbad7284de3f55be9bafdc",
-    ".woff": "421d9387bd14925f814fa93599e1ef189fb54b9a1d3ba99e3f72e5c2c21cb173",
-    ".woff2": "d02fc368a17113a4a33e9273570c3d8621ae7dee222c835009dfbea8a25dcbeb"
+    ".svg": "04bdad753e3a2fa105f68b0e067473b612dd9109be61359f29c5795ccde081ba",
+    ".ttf": "df7d9a844e6042ea938ed7e0fd31a4a555808152603d10fc85f3a90df4617110",
+    ".woff": "6f5491db7473abaf33cd814bc13dd580c97e550c6a4ed69a384009880cf36a21",
+    ".woff2": "7a6a5354c91ce11ff585fa3e81e2fae9f267b9d5a1abe5fbfd721cff52c5dcae"
   },
   "reviewedSourceSha256": {
     "apps/browser/src/autofill/content/components/icons/shield.ts": "aa7e3e20518fbcb374910370bd3d56d1860efc8b4d99795cfb3bc12874e460b4",
-    "libs/angular/src/scss/bwicons/fonts/bwi-font.svg": "97dc08aa4fdc4bcc025a2f0715ae7dfc91dcc25affda1687c6ebe1128d7b2b10",
-    "libs/angular/src/scss/bwicons/fonts/bwi-font.ttf": "ba88717981910deadb9d694affbac4c1cd3658a989dbad7284de3f55be9bafdc",
-    "libs/angular/src/scss/bwicons/fonts/bwi-font.woff": "421d9387bd14925f814fa93599e1ef189fb54b9a1d3ba99e3f72e5c2c21cb173",
-    "libs/angular/src/scss/bwicons/fonts/bwi-font.woff2": "d02fc368a17113a4a33e9273570c3d8621ae7dee222c835009dfbea8a25dcbeb",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.svg": "04bdad753e3a2fa105f68b0e067473b612dd9109be61359f29c5795ccde081ba",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.ttf": "df7d9a844e6042ea938ed7e0fd31a4a555808152603d10fc85f3a90df4617110",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.woff": "6f5491db7473abaf33cd814bc13dd580c97e550c6a4ed69a384009880cf36a21",
+    "libs/angular/src/scss/bwicons/fonts/bwi-font.woff2": "7a6a5354c91ce11ff585fa3e81e2fae9f267b9d5a1abe5fbfd721cff52c5dcae",
     "libs/assets/src/material-icons/bitwarden-shield.svg": "c46ae40741a7e73a8a435ef44e3c3a765280db88bd3082f875926f729874abdd",
     "libs/assets/src/svg/svgs/bitwarden-icon.ts": "9537d0b7e9cf1727493ac69bcfe8e14be34036428c0edb843837825f669e25a1",
     "libs/assets/src/svg/svgs/bitwarden-logo.icon.ts": "e104511ed9d9871d08c1b73f09499ca46051c0f5f592ff0b995d87dda1802542",
@@ -83,10 +83,12 @@
   },
   "gplSdk": {
     "package": "@bitwarden/sdk-internal",
-    "version": "0.2.0-main.983",
+    "version": "0.2.0-main.1214",
     "license": "GPL-3.0",
     "repository": "https://github.com/bitwarden/sdk-internal.git",
-    "wasm": "node_modules/@bitwarden/sdk-internal/bitwarden_wasm_internal_bg.wasm",
-    "wasmSha256": "2479566e3654c4f40843ce8eea51197b0522ef2d70e487d4f2e9f09ca2e50c03"
+    "wasmSha256ByFile": {
+      "bitwarden_wasm_internal_bg.mvp.wasm": "9c106146dec030a8c3836aab091446fbb01fddc381555eba7d901304cba73774",
+      "bitwarden_wasm_internal_bg.wasm": "df65f578fb1bd4b432533dcd776908b9a559c12a7c3ba86407b1d99a5533ed55"
+    }
   }
 }

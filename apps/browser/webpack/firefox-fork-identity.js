@@ -73,7 +73,8 @@ const FORK_IDENTITY_MESSAGE_KEYS = Object.freeze([
   "continueToPasswordlessDotDevPageDesc",
   "continueToSecretsManagerPageDesc",
   "continueToWebAppDesc",
-  "couldNotDecryptVaultItemsBelow",
+  "couldNotDecryptVaultItem",
+  "couldNotDecryptVaultItems",
   "defaultPasswordManagerCalloutDesc",
   "defaultPasswordManagerPromptStep2AfterAllow",
   "defaultPasswordManagerPromptTitle",
@@ -139,8 +140,6 @@ const FORK_IDENTITY_MESSAGE_KEYS = Object.freeze([
   "setYourPinCode",
   "sharedUnlockDesktopPermissionDesc",
   "sharedUnlockDesktopPermissionWarning",
-  "sharedUnlockWithDesktopDescription",
-  "sharedUnlockWithWebDescription",
   "showInlineMenuOnIconSelectionLabel",
   "startDesktopDesc",
   "startDesktopTitle",
@@ -408,9 +407,8 @@ function transformLocale(identity) {
       bitwardenSupport: "your server administrator or support provider",
       downloadDiagnosticReportWith:
         "Download the diagnostic report before sharing it with your server administrator or support provider.",
-      couldNotDecryptVaultItemsBelow: `${identity.name} could not decrypt the vault items listed below.`,
-      contactCSToAvoidDataLossPart1: "Contact your server administrator or support provider",
-      contactCSToAvoidDataLossPart2: "to avoid further data loss.",
+      couldNotDecryptVaultItem: `${identity.name} could not decrypt the vault item below. Provide the item ID to your server administrator or support provider.`,
+      couldNotDecryptVaultItems: `${identity.name} could not decrypt the vault items below. Provide the item IDs to your server administrator or support provider.`,
       bitwardenForBusiness: "Business password management",
       bitwardenForBusinessPageDesc:
         "Business password management lets you share vault items through an organization.",
@@ -470,8 +468,6 @@ function transformLocale(identity) {
         "Biometric unlock isn't enabled for $EMAIL$ in the compatible desktop app.",
       sessionTimeoutSuppressedByConnectedDevice:
         "Managed by the compatible desktop app. Open that app to make changes.",
-      sharedUnlockWithDesktopDescription: "Share unlock status with a compatible desktop app.",
-      sharedUnlockWithWebDescription: "Share unlock status with compatible web vaults.",
       sharedUnlockDesktopPermissionDesc:
         "Shared unlock needs permission to communicate with the compatible desktop app.",
       sharedUnlockDesktopPermissionWarning:

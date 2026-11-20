@@ -13,7 +13,7 @@ import { PremiumUpgradePromptService } from "@bitwarden/common/vault/abstraction
 import { NavigationModule, SideNavService } from "@bitwarden/components";
 import { GlobalStateProvider } from "@bitwarden/state";
 
-import { ARCHIVE_ROUTE, TRASH_ROUTE } from "../../models/vault-scope";
+import { ARCHIVE_ROUTE, FOLDERS_ROUTE, TRASH_ROUTE } from "../../models/vault-scope";
 
 import { VaultManageNavComponent } from "./vault-manage-nav.component";
 
@@ -79,6 +79,8 @@ describe("VaultManageNavComponent", () => {
         RouterModule.forRoot([
           { path: `vault/${ARCHIVE_ROUTE}`, children: [] },
           { path: `vault/${TRASH_ROUTE}`, children: [] },
+          { path: FOLDERS_ROUTE, children: [] },
+          { path: `${FOLDERS_ROUTE}/:folderId`, children: [] },
         ]),
       ],
       providers: [
@@ -109,6 +111,33 @@ describe("VaultManageNavComponent", () => {
 
   it("links Trash to the trash vault scope", () => {
     expect(navItem("trash").componentInstance.route()).toEqual(["/vault", TRASH_ROUTE]);
+  });
+
+  describe("highlighting My folders", () => {
+    const FOLDER_ID = "11111111-1111-4111-8111-111111111111";
+    const ariaCurrent = () =>
+      navItem("myFolders").nativeElement.querySelector("a")?.getAttribute("aria-current");
+
+    it("is not current away from the folders pages", async () => {
+      await router.navigateByUrl(`/vault/${TRASH_ROUTE}`);
+      fixture.detectChanges();
+
+      expect(ariaCurrent()).toBeNull();
+    });
+
+    it("is current on the My folders list", async () => {
+      await router.navigateByUrl(`/${FOLDERS_ROUTE}`);
+      fixture.detectChanges();
+
+      expect(ariaCurrent()).toBe("page");
+    });
+
+    it("stays current on a folder's page", async () => {
+      await router.navigateByUrl(`/${FOLDERS_ROUTE}/${FOLDER_ID}`);
+      fixture.detectChanges();
+
+      expect(ariaCurrent()).toBe("page");
+    });
   });
 
   describe("Archive upgrade path", () => {
@@ -145,6 +174,68 @@ describe("VaultManageNavComponent", () => {
 
       expect(fixture.nativeElement.querySelector("button[bit-chip-action]")).not.toBeNull();
     });
+  });
+
+  describe("clicking the entry for the page in view", () => {
+    // PM-42525.
+    const trashWithFilters = `/vault/${TRASH_ROUTE}?vault.sort=name&vault.direction=asc`;
+
+    it("leaves Trash's query params in the URL", async () => {
+      await router.navigateByUrl(trashWithFilters);
+      fixture.detectChanges();
+
+      clickNavItem("trash");
+      await fixture.whenStable();
+
+      expect(router.url).toBe(trashWithFilters);
+    });
+
+    it("carries no query params from Trash onto the archive", async () => {
+      await router.navigateByUrl(trashWithFilters);
+      fixture.detectChanges();
+
+      clickNavItem("archiveNoun");
+      await fixture.whenStable();
+
+      expect(router.url).toBe(`/vault/${ARCHIVE_ROUTE}`);
+    });
+
+    it("does not re-navigate to the archive from the archive", async () => {
+      await router.navigateByUrl(`/vault/${ARCHIVE_ROUTE}?vault.sort=name`);
+      fixture.detectChanges();
+      const navigate = jest.spyOn(router, "navigate").mockResolvedValue(true);
+
+      clickNavItem("archiveNoun");
+      await fixture.whenStable();
+
+      expect(navigate).not.toHaveBeenCalled();
+      expect(router.url).toBe(`/vault/${ARCHIVE_ROUTE}?vault.sort=name`);
+    });
+
+    it("does not prompt to upgrade when a non-premium user re-clicks the archive", async () => {
+      // The early return lands before the upgrade check, so being here already outranks it.
+      await router.navigateByUrl(`/vault/${ARCHIVE_ROUTE}`);
+      canArchive$.next(false);
+      fixture.detectChanges();
+
+      clickNavItem("archiveNoun");
+      await fixture.whenStable();
+
+      expect(premiumUpgradePromptService.promptForPremium).not.toHaveBeenCalled();
+    });
+  });
+
+  it("marks Archive as the current page for assistive technology", async () => {
+    // Archive is a button, so `routerLinkActive` never writes `aria-current` for it.
+    const ariaCurrent = () =>
+      navItem("archiveNoun").nativeElement.querySelector("button")?.getAttribute("aria-current");
+
+    expect(ariaCurrent()).toBeNull();
+
+    await router.navigateByUrl(`/vault/${ARCHIVE_ROUTE}`);
+    fixture.detectChanges();
+
+    expect(ariaCurrent()).toBe("page");
   });
 
   it("highlights Archive only while the archive is the current page", async () => {

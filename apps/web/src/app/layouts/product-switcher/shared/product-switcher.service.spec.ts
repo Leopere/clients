@@ -7,15 +7,15 @@ import { Observable, firstValueFrom, of } from "rxjs";
 
 import { OrganizationService } from "@bitwarden/common/admin-console/abstractions/organization/organization.service.abstraction";
 import { PolicyService } from "@bitwarden/common/admin-console/abstractions/policy/policy.service.abstraction";
-import { ProviderService } from "@bitwarden/common/admin-console/abstractions/provider.service";
 import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
-import { Provider } from "@bitwarden/common/admin-console/models/domain/provider";
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
 import { BillingAccountProfileStateService } from "@bitwarden/common/billing/abstractions";
+import { ConfigService } from "@bitwarden/common/platform/abstractions/config/config.service";
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { PlatformUtilsService } from "@bitwarden/common/platform/abstractions/platform-utils.service";
 import { Utils } from "@bitwarden/common/platform/misc/utils";
 import { SyncService } from "@bitwarden/common/platform/sync";
+import { ProviderService, Provider } from "@bitwarden/common/provider";
 import { FakeAccountService, mockAccountServiceWith } from "@bitwarden/common/spec";
 import { UserId } from "@bitwarden/common/types/guid";
 
@@ -31,6 +31,7 @@ describe("ProductSwitcherService", () => {
   let billingAccountProfileStateService: MockProxy<BillingAccountProfileStateService>;
   let activeRouteParams = convertToParamMap({ organizationId: "1234" });
   let singleOrgPolicyEnabled = false;
+  let vfo1Enabled = false;
   const getLastSync = jest.fn().mockResolvedValue(new Date("2024-05-14"));
   const userId = Utils.newGuid() as UserId;
 
@@ -44,6 +45,8 @@ describe("ProductSwitcherService", () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    singleOrgPolicyEnabled = false;
+    vfo1Enabled = false;
     getLastSync.mockResolvedValue(new Date("2024-05-14"));
     router = mock<Router>();
     organizationService = mock<OrganizationService>();
@@ -89,6 +92,10 @@ describe("ProductSwitcherService", () => {
           },
         },
         { provide: BillingAccountProfileStateService, useValue: billingAccountProfileStateService },
+        {
+          provide: ConfigService,
+          useValue: { getFeatureFlag$: () => of(vfo1Enabled) },
+        },
       ],
     });
   });
@@ -133,6 +140,18 @@ describe("ProductSwitcherService", () => {
         const products = await firstValueFrom(service.products$);
 
         expect(products.other.find((p) => p.name === "Secrets Manager")).toBeDefined();
+      });
+
+      it("overrides the other section name when the VFO1 flag is enabled", async () => {
+        vfo1Enabled = true;
+
+        initiateService();
+
+        const products = await firstValueFrom(service.products$);
+
+        expect(
+          products.other.find((p) => p.name === "Secrets Manager").otherProductOverrides.name,
+        ).toBe("getSecretsManager");
       });
 
       it("is included in bento when there is an organization with SM", async () => {
@@ -200,6 +219,25 @@ describe("ProductSwitcherService", () => {
       it("does not include Organizations when the user's single org policy is enabled", async () => {
         singleOrgPolicyEnabled = true;
         initiateService();
+        const products = await firstValueFrom(service.products$);
+
+        expect(products.other.find((p) => p.name === "Organizations")).not.toBeDefined();
+      });
+
+      it("does not include Organizations when the VFO1 foundation flag is enabled", async () => {
+        vfo1Enabled = true;
+        initiateService();
+
+        const products = await firstValueFrom(service.products$);
+
+        expect(products.other.find((p) => p.name === "Organizations")).not.toBeDefined();
+      });
+
+      it("does not include Organizations on Self-Host when the VFO1 foundation flag is enabled", async () => {
+        platformUtilsService.isSelfHost.mockReturnValue(true);
+        vfo1Enabled = true;
+        initiateService();
+
         const products = await firstValueFrom(service.products$);
 
         expect(products.other.find((p) => p.name === "Organizations")).not.toBeDefined();

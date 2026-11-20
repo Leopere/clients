@@ -35,6 +35,12 @@ import {
   LoginEmailService,
   SsoUrlService,
 } from "@bitwarden/auth/common";
+import {
+  AutomationCapability,
+  BiometricsCapability,
+  DesktopNavigationCapability,
+  ProcessReloadCapability,
+} from "@bitwarden/automation-driver";
 import { ApiService } from "@bitwarden/common/abstractions/api.service";
 import { OrganizationApiServiceAbstraction } from "@bitwarden/common/admin-console/abstractions/organization/organization-api.service.abstraction";
 import { OrganizationService } from "@bitwarden/common/admin-console/abstractions/organization/organization.service.abstraction";
@@ -60,21 +66,23 @@ import { AutofillSettingsServiceAbstraction } from "@bitwarden/common/autofill/s
 import { DomainSettingsService } from "@bitwarden/common/autofill/services/domain-settings.service";
 import { BillingAccountProfileStateService } from "@bitwarden/common/billing/abstractions";
 import { ClientType, DeviceType } from "@bitwarden/common/enums";
-import { ProcessReloadServiceAbstraction } from "@bitwarden/common/key-management/abstractions/process-reload.service";
 import { AccountCryptographicStateService } from "@bitwarden/common/key-management/account-cryptography/account-cryptographic-state.service";
 import {
   InternalMasterPasswordServiceAbstraction,
   MasterPasswordServiceAbstraction,
 } from "@bitwarden/common/key-management/master-password/abstractions/master-password.service.abstraction";
 import { PinServiceAbstraction } from "@bitwarden/common/key-management/pin/pin.service.abstraction";
-import { DefaultProcessReloadService } from "@bitwarden/common/key-management/services/default-process-reload.service";
+import {
+  DefaultProcessReloadService,
+  ProcessReloadServiceAbstraction,
+} from "@bitwarden/common/key-management/process-reload";
 import { SessionTimeoutTypeService } from "@bitwarden/common/key-management/session-timeout";
 import {
-  SharedUnlockLeaderService,
+  SharedUnlockPeerService,
   SharedUnlockSettingsService,
   DefaultSharedUnlockSettingsService,
 } from "@bitwarden/common/key-management/shared-unlock";
-import { DefaultSharedUnlockLeaderService } from "@bitwarden/common/key-management/shared-unlock/default-shared-unlock-leader.service";
+import { DefaultSharedUnlockPeerService } from "@bitwarden/common/key-management/shared-unlock/default-shared-unlock-peer.service";
 import {
   VaultTimeoutSettingsService,
   VaultTimeoutStringType,
@@ -97,6 +105,7 @@ import {
 import { RegisterSdkService } from "@bitwarden/common/platform/abstractions/sdk/register-sdk.service";
 import { SdkClientFactory } from "@bitwarden/common/platform/abstractions/sdk/sdk-client-factory";
 import { SdkLoadService } from "@bitwarden/common/platform/abstractions/sdk/sdk-load.service";
+import { SdkService } from "@bitwarden/common/platform/abstractions/sdk/sdk.service";
 import { StateService as StateServiceAbstraction } from "@bitwarden/common/platform/abstractions/state.service";
 import { AbstractStorageService } from "@bitwarden/common/platform/abstractions/storage.service";
 import { SystemService as SystemServiceAbstraction } from "@bitwarden/common/platform/abstractions/system.service";
@@ -141,9 +150,17 @@ import {
   LegacyCompatKeyService,
   WebCryptoFunctionService,
 } from "@bitwarden/legacy-crypto";
+import { FlightRecorderLogRecorderService } from "@bitwarden/logging-angular";
 import { SerializedMemoryStorageService } from "@bitwarden/storage-core";
+import {
+  CipherShareAccessService,
+  SHARE_ITEM_PRESENTER,
+  SHARE_PASSWORD_REPROMPT,
+  ShareButtonComponent,
+} from "@bitwarden/tools-share";
 import { LockService, UnlockService } from "@bitwarden/unlock";
 import {
+  CIPHER_SHARE_ACCESS,
   CipherFormGenerationService,
   DefaultSshImportPromptService,
   DefaultVaultNavService,
@@ -156,6 +173,11 @@ import {
   VAULT_FILTER_BASE_ROUTE,
   Vfo1TerminologyService,
   PasswordRepromptService,
+  SHARE_ITEM_ENTRY_POINT,
+  VFO1_FILTERS_STEP,
+  VFO1_SHARED_FOLDERS_STEP,
+  VFO1_VAULT_LIST_STEP,
+  VFO1_WALKTHROUGH_STEPS,
 } from "@bitwarden/vault";
 
 import { DesktopLoginComponentService } from "../../auth/login/desktop-login-component.service";
@@ -163,8 +185,10 @@ import { DesktopAuthRequestAnsweringService } from "../../auth/services/auth-req
 import { DesktopTwoFactorAuthDuoComponentService } from "../../auth/services/desktop-two-factor-auth-duo-component.service";
 import { DesktopAutofillSettingsService } from "../../autofill/services/desktop-autofill-settings.service";
 import { DesktopAutofillService } from "../../autofill/services/desktop-autofill.service";
+import { DesktopAutotypeGaPolicyService } from "../../autofill/services/desktop-autotype-ga-policy.service";
 import { DesktopAutotypeMvpService } from "../../autofill/services/desktop-autotype-mvp.service";
 import { DesktopAutotypeDefaultSettingPolicy } from "../../autofill/services/desktop-autotype-policy.service";
+import { DesktopAutotypeService } from "../../autofill/services/desktop-autotype.service";
 import { DesktopFido2MacOsUserVerificationService } from "../../autofill/services/desktop-fido2-macos-user-verification.service";
 import { DesktopFido2UnsupportedUserVerificationService } from "../../autofill/services/desktop-fido2-unsupported-user-verification.service";
 import { DesktopFido2UserInterfaceService } from "../../autofill/services/desktop-fido2-user-interface.service";
@@ -201,13 +225,12 @@ import { DesktopDeviceManagementComponentService } from "../../services/desktop-
 import { DuckDuckGoMessageHandlerService } from "../../services/duckduckgo-message-handler.service";
 import { EncryptedMessageHandlerService } from "../../services/encrypted-message-handler.service";
 import { NativeMessagingService } from "../../services/native-messaging.service";
+import { DesktopShareItemPresenter } from "../tools/share-item/desktop-share-item.presenter";
 
 import { DesktopFileDownloadService } from "./desktop-file-download.service";
 import { InitService } from "./init.service";
 import { NativeMessagingManifestService } from "./native-messaging-manifest.service";
 import { DesktopSetInitialPasswordService } from "./set-initial-password/desktop-set-initial-password.service";
-
-const RELOAD_CALLBACK = new SafeInjectionToken<() => any>("RELOAD_CALLBACK");
 
 /**
  * Provider definitions used in the ngModule.
@@ -216,6 +239,10 @@ const RELOAD_CALLBACK = new SafeInjectionToken<() => any>("RELOAD_CALLBACK");
  */
 const safeProviders: SafeProvider[] = [
   safeProvider(InitService),
+  safeProvider({
+    provide: VFO1_WALKTHROUGH_STEPS,
+    useValue: [VFO1_VAULT_LIST_STEP, VFO1_SHARED_FOLDERS_STEP, VFO1_FILTERS_STEP],
+  }),
   safeProvider({
     provide: CipherFormGenerationService,
     useClass: DesktopCredentialGenerationService,
@@ -236,6 +263,36 @@ const safeProviders: SafeProvider[] = [
     useClass: DesktopDeviceManagementComponentService,
     deps: [],
   }),
+  // Desktop-only automation capabilities.
+  safeProvider({
+    provide: AutomationCapability,
+    useFactory: () => new ProcessReloadCapability(() => ipc.platform.reloadProcess()),
+    deps: [],
+    multi: true,
+  }),
+  safeProvider({
+    provide: AutomationCapability,
+    useFactory: (toastService: ToastService) =>
+      new BiometricsCapability(
+        {
+          setStatus: (status) => ipc.keyManagement.automation.biometrics.setStatus(status),
+          listPending: () => ipc.keyManagement.automation.biometrics.listPending(),
+          approve: (id) => ipc.keyManagement.automation.biometrics.approve(id),
+          deny: (id) => ipc.keyManagement.automation.biometrics.deny(id),
+          onRequest: (callback) => ipc.keyManagement.automation.biometrics.onRequest(callback),
+        },
+        toastService,
+      ),
+    deps: [ToastService],
+    multi: true,
+  }),
+  safeProvider({
+    provide: AutomationCapability,
+    useFactory: (messagingService: MessagingServiceAbstraction) =>
+      new DesktopNavigationCapability(messagingService),
+    deps: [MessagingServiceAbstraction],
+    multi: true,
+  }),
   safeProvider(NativeMessagingService),
   safeProvider(BiometricMessageHandlerService),
   safeProvider(DialogService),
@@ -246,13 +303,10 @@ const safeProviders: SafeProvider[] = [
     multi: true,
   }),
   safeProvider({
-    provide: RELOAD_CALLBACK,
-    useValue: null,
-  }),
-  safeProvider({
     provide: LogServiceAbstraction,
-    useClass: ElectronLogRendererService,
-    deps: [],
+    useFactory: (recorder: FlightRecorderLogRecorderService) =>
+      new ElectronLogRendererService(null, recorder),
+    deps: [FlightRecorderLogRecorderService],
   }),
   safeProvider({
     provide: PlatformUtilsServiceAbstraction,
@@ -342,9 +396,7 @@ const safeProviders: SafeProvider[] = [
     deps: [
       PinServiceAbstraction,
       MessagingServiceAbstraction,
-      RELOAD_CALLBACK,
       VaultTimeoutSettingsService,
-      BiometricStateService,
       AccountServiceAbstraction,
       LogService,
       AuthServiceAbstraction,
@@ -400,10 +452,13 @@ const safeProviders: SafeProvider[] = [
       StateProvider,
       AccountCryptographicStateService,
       BiometricsService,
+      SdkService,
     ],
   }),
   safeProvider({
     provide: DesktopSettingsService,
+    useFactory: (stateProvider: StateProvider) =>
+      new DesktopSettingsService(stateProvider, ipc.platform.isMacAppStore),
     deps: [StateProvider],
   }),
   safeProvider({
@@ -412,18 +467,19 @@ const safeProviders: SafeProvider[] = [
     deps: [StateProvider],
   }),
   safeProvider({
-    provide: SharedUnlockLeaderService,
-    useClass: DefaultSharedUnlockLeaderService,
+    provide: SharedUnlockPeerService,
+    useClass: DefaultSharedUnlockPeerService,
     deps: [
       IpcService,
       AccountService,
       LockService,
-      KeyServiceAbstraction,
       PlatformUtilsServiceAbstraction,
       VaultTimeoutSettingsService,
       EnvironmentService,
       SharedUnlockSettingsService,
       UnlockService,
+      ConfigService,
+      StateProvider,
     ],
   }),
   safeProvider({
@@ -439,7 +495,9 @@ const safeProviders: SafeProvider[] = [
       Fido2AuthenticatorServiceAbstraction,
       AccountService,
       AuthService,
+      EnvironmentService,
       PlatformUtilsService,
+      DesktopFido2UserInterfaceService,
     ],
   }),
   safeProvider({
@@ -621,6 +679,32 @@ const safeProviders: SafeProvider[] = [
     ],
   }),
   safeProvider({
+    provide: DesktopAutotypeService,
+    useClass: DesktopAutotypeService,
+    deps: [
+      AccountService,
+      AuthService,
+      CipherServiceAbstraction,
+      ConfigService,
+      GlobalStateProvider,
+      PlatformUtilsServiceAbstraction,
+      BillingAccountProfileStateService,
+      DesktopAutotypeGaPolicyService,
+      LogService,
+    ],
+  }),
+  safeProvider({
+    provide: DesktopAutotypeGaPolicyService,
+    useClass: DesktopAutotypeGaPolicyService,
+    deps: [
+      AccountServiceAbstraction,
+      AuthServiceAbstraction,
+      PolicyServiceAbstraction,
+      ConfigService,
+    ],
+  }),
+  // Autotype MVP only: must only be consumed within the Autotype MVP scope
+  safeProvider({
     provide: DesktopAutotypeDefaultSettingPolicy,
     useClass: DesktopAutotypeDefaultSettingPolicy,
     deps: [AccountServiceAbstraction, AuthServiceAbstraction, InternalPolicyService, ConfigService],
@@ -719,6 +803,30 @@ const safeProviders: SafeProvider[] = [
   safeProvider({
     provide: IpcService,
     useClass: IpcRendererService,
+    deps: [],
+  }),
+  // Sharing and the Vault layer reach each other through tokens rather than imports, because
+  // `@bitwarden/tools-share` already depends on `@bitwarden/vault` through `@bitwarden/send-ui`
+  // and importing it back would close a package cycle. The app sits above both, so it is the one
+  // place the two can be introduced.
+  safeProvider({
+    provide: SHARE_ITEM_ENTRY_POINT,
+    useValue: ShareButtonComponent,
+  }),
+  safeProvider({
+    provide: CIPHER_SHARE_ACCESS,
+    useExisting: CipherShareAccessService,
+    deps: [],
+  }),
+  safeProvider({
+    provide: SHARE_PASSWORD_REPROMPT,
+    useExisting: PasswordRepromptService,
+    deps: [],
+  }),
+  safeProvider(DesktopShareItemPresenter),
+  safeProvider({
+    provide: SHARE_ITEM_PRESENTER,
+    useExisting: DesktopShareItemPresenter,
     deps: [],
   }),
 ];

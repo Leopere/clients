@@ -16,12 +16,14 @@ const libContent = [
   "../../libs/auth/src/**/*.{html,ts,mdx}",
   "../../libs/billing/src/**/*.{html,ts,mdx}",
   "../../libs/dirt/card/src/**/*.{html,ts,mdx}",
+  "../../libs/importer/src/**/*.{html,ts,mdx}",
   "../../libs/key-management-ui/src/**/*.{html,ts,mdx}",
   "../../libs/platform/src/**/*.{html,ts,mdx}",
   "../../libs/pricing/src/**/*.{html,ts,mdx}",
   "../../libs/subscription/src/**/*.{html,ts,mdx}",
   "../../libs/tools/generator/components/src/**/*.{html,ts,mdx}",
   "../../libs/tools/send/send-ui/src/**/*.{html,ts,mdx}",
+  "../../libs/tools/share/src/**/*.{html,ts,mdx}",
   "../../libs/vault/src/**/*.{html,ts,mdx}",
 ].map((libPath) => path.resolve(__dirname, libPath));
 
@@ -169,11 +171,11 @@ module.exports = {
       "marketing-logo": rgba("--color-marketing-logo"),
       "bw-blue": rgba("--color-bw-blue"),
       illustration: {
-        outline: rgba("--color-illustration-outline"),
-        "bg-primary": rgba("--color-illustration-bg-primary"),
-        "bg-secondary": rgba("--color-illustration-bg-secondary"),
-        "bg-tertiary": rgba("--color-illustration-bg-tertiary"),
-        tertiary: rgba("--color-illustration-tertiary"),
+        stroke: "var(--color-illustration-stroke)",
+        "fill-primary": "var(--color-illustration-fill-primary)",
+        "fill-secondary": "var(--color-illustration-fill-secondary)",
+        "fill-tertiary": "var(--color-illustration-fill-tertiary)",
+        "fill-accent": "var(--color-illustration-fill-accent)",
         logo: rgba("--color-illustration-logo"),
       },
       fg: {

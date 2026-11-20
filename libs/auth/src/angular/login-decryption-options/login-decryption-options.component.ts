@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormBuilder, FormControl, ReactiveFormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 import {
+  EMPTY,
   catchError,
   concatMap,
   defer,
@@ -21,7 +22,6 @@ import {
 
 import { JslibModule } from "@bitwarden/angular/jslib.module";
 import {
-  LogoutService,
   UserDecryptionOptions,
   UserDecryptionOptionsServiceAbstraction,
 } from "@bitwarden/auth/common";
@@ -32,6 +32,7 @@ import { AuthService } from "@bitwarden/common/auth/abstractions/auth.service";
 import { PasswordResetEnrollmentServiceAbstraction } from "@bitwarden/common/auth/abstractions/password-reset-enrollment.service.abstraction";
 import { SsoLoginServiceAbstraction } from "@bitwarden/common/auth/abstractions/sso-login.service.abstraction";
 import { AuthenticationStatus } from "@bitwarden/common/auth/enums/authentication-status";
+import { LogoutService } from "@bitwarden/common/auth/logout";
 import { ClientType } from "@bitwarden/common/enums";
 import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
 import { AccountCryptographicStateService } from "@bitwarden/common/key-management/account-cryptography/account-cryptographic-state.service";
@@ -213,7 +214,7 @@ export class LoginDecryptionOptionsComponent implements OnInit {
       message: this.i18nService.t("activeUserEmailNotFoundLoggingYouOut"),
     });
 
-    await this.logoutService.logout(this.activeAccountId);
+    await this.logoutService.logout(this.activeAccountId, "missingEmailError");
     // navigate to root so redirect guard can properly route next active user or null user to correct page
     await this.router.navigate(["/"]);
   }
@@ -223,7 +224,17 @@ export class LoginDecryptionOptionsComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap((value) =>
-          defer(() => this.deviceTrustService.setShouldTrustDevice(this.activeAccountId, value)),
+          defer(() =>
+            this.deviceTrustService.setShouldTrustDevice(this.activeAccountId, value),
+          ).pipe(
+            // Caught inside the switchMap so a failed write is reported and the stream stays
+            // subscribed for later toggles. Left uncaught it would both kill the subscription
+            // and surface as an unhandled error, since this is a bare subscribe.
+            catchError((err: unknown) => {
+              this.validationService.showError(err);
+              return EMPTY;
+            }),
+          ),
         ),
       )
       .subscribe();
@@ -332,14 +343,10 @@ export class LoginDecryptionOptionsComponent implements OnInit {
       !trustDevice,
     );
 
-    // An untrusted device must not share its unlock state with other clients, so turn both
-    // allow-sharing settings off.
+    // An untrusted device must not share its unlock state with other clients, so turn the
+    // desktop allow-sharing setting off. Web sharing is covered by unlockSharingDisabled.
     if (!trustDevice) {
       await this.sharedUnlockSettingsService.setAllowSharingUnlockStateWithDesktop(
-        false,
-        this.activeAccountId,
-      );
-      await this.sharedUnlockSettingsService.setAllowSharingUnlockStateWithWeb(
         false,
         this.activeAccountId,
       );
@@ -532,7 +539,7 @@ export class LoginDecryptionOptionsComponent implements OnInit {
 
     const userId = (await firstValueFrom(this.accountService.activeAccount$))?.id;
     if (confirmed) {
-      await this.logoutService.logout(userId);
+      await this.logoutService.logout(userId, "userInitiated");
       // navigate to root so redirect guard can properly route next active user or null user to correct page
       await this.router.navigate(["/"]);
     }

@@ -1,10 +1,9 @@
-import { inject, Injectable, NgZone } from "@angular/core";
-import { toObservable } from "@angular/core/rxjs-interop";
+import { computed, inject, Injectable, NgZone } from "@angular/core";
+import { takeUntilDestroyed, toObservable, toSignal } from "@angular/core/rxjs-interop";
 import {
   combineLatest,
   debounceTime,
   distinctUntilChanged,
-  distinctUntilKeyChanged,
   filter,
   map,
   merge,
@@ -12,6 +11,7 @@ import {
   Observable,
   of,
   shareReplay,
+  skip,
   startWith,
   Subject,
   switchMap,
@@ -21,8 +21,11 @@ import {
 
 import { CollectionService } from "@bitwarden/admin-console/common";
 import { OrganizationService } from "@bitwarden/common/admin-console/abstractions/organization/organization.service.abstraction";
+import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
 import { getUserId } from "@bitwarden/common/auth/services/account.service";
+import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
+import { ConfigService } from "@bitwarden/common/platform/abstractions/config/config.service";
 import { SyncService } from "@bitwarden/common/platform/sync";
 import { CollectionId, OrganizationId, UserId } from "@bitwarden/common/types/guid";
 import { CipherService } from "@bitwarden/common/vault/abstractions/cipher.service";
@@ -42,6 +45,7 @@ import { PopupCipherViewLike } from "../views/popup-cipher.view";
 
 import { VaultPopupAutofillService } from "./vault-popup-autofill.service";
 import { MY_VAULT_ID, VaultPopupListFiltersService } from "./vault-popup-list-filters.service";
+import { VaultPopupListTableFiltersService } from "./vault-popup-list-table-filters.service";
 
 /**
  * Service for managing the various item lists on the new Vault tab in the browser popup.
@@ -50,13 +54,31 @@ import { MY_VAULT_ID, VaultPopupListFiltersService } from "./vault-popup-list-fi
   providedIn: "root",
 })
 export class VaultPopupItemsService {
+  /** The legacy (VFO1 off) search text. It lives in the popup view cache, never on disk. */
   private cachedSearchText = inject(PopupViewCacheService).signal<string>({
     key: "vault-search-text",
     initialValue: "",
     persistNavigation: true,
   });
 
-  readonly searchText$ = toObservable(this.cachedSearchText);
+  private readonly vfo1Enabled = toSignal(
+    this.configService.getFeatureFlag$(FeatureFlag.VFO1Foundation),
+    {
+      initialValue: false,
+    },
+  );
+
+  /**
+   * The search text in view. With VFO1 it is the active user's per-vault search text, otherwise
+   * the legacy view-cached text.
+   */
+  readonly searchText = computed(() =>
+    this.vfo1Enabled()
+      ? this.vaultPopupListTableFiltersService.searchText()
+      : this.cachedSearchText(),
+  );
+
+  readonly searchText$ = toObservable(this.searchText);
 
   /**
    * Subject that emits whenever new ciphers are being processed/filtered.
@@ -143,7 +165,7 @@ export class VaultPopupItemsService {
           const collectionMap = Object.fromEntries(collections.map((col) => [col.id, col]));
           return ciphers
             .filter((c) => !CipherViewLikeUtils.isDeleted(c) && !CipherViewLikeUtils.isArchived(c))
-
+            .filter((c) => hasAccessibleOrganization(c, orgMap))
             .map((cipher) => {
               (cipher as PopupCipherViewLike).collections = cipher.collectionIds?.map(
                 (colId) => collectionMap[colId as CollectionId],
@@ -183,13 +205,14 @@ export class VaultPopupItemsService {
     this._effectiveSearchText$,
     this.vaultPopupListFiltersService.filterFunction$,
     getUserId(this.accountService.activeAccount$),
+    this.configService.getFeatureFlag$(FeatureFlag.VFO1Foundation),
   ]).pipe(
     map(
-      ([ciphers, searchText, filterFunction, userId]): [PopupCipherViewLike[], string, UserId] => [
-        filterFunction(ciphers),
-        searchText,
-        userId,
-      ],
+      ([ciphers, searchText, filterFunction, userId, vfo1Enabled]): [
+        PopupCipherViewLike[],
+        string,
+        UserId,
+      ] => [vfo1Enabled ? ciphers : filterFunction(ciphers), searchText, userId],
     ),
     switchMap(
       ([ciphers, searchText, userId]) =>
@@ -263,9 +286,14 @@ export class VaultPopupItemsService {
   hasFilterApplied$ = combineLatest([
     this._hasSearchText,
     this.vaultPopupListFiltersService.filters$,
+    this.vaultPopupListTableFiltersService.hasFilterApplied$,
+    this.configService.getFeatureFlag$(FeatureFlag.VFO1Foundation),
   ]).pipe(
-    map(([hasSearchText, filters]) => {
-      return hasSearchText || Object.values(filters).some((filter) => filter !== null);
+    map(([hasSearchText, filters, tableFilterApplied, vfo1Enabled]) => {
+      const filterApplied = vfo1Enabled
+        ? tableFilterApplied
+        : Object.values(filters).some((f) => f !== null);
+      return hasSearchText || filterApplied;
     }),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
@@ -283,23 +311,39 @@ export class VaultPopupItemsService {
   cipherCount$: Observable<number> = this._activeCipherList$.pipe(map((ciphers) => ciphers.length));
 
   /**
+   * Every active cipher, before the search and chips narrow it — the chip options describe what
+   * the vault holds, not what the search matches.
+   */
+  activeCiphers$: Observable<PopupCipherViewLike[]> = this._activeCipherList$;
+
+  /**
    * Observable that indicates whether there are no ciphers to show with the current filter.
    */
   noFilteredResults$: Observable<boolean> = this._filteredCipherList$.pipe(
     map((ciphers) => !ciphers.length),
   );
 
-  /** Observable that indicates when the user should see the deactivated org state */
+  /**
+   * Observable that indicates when the user should see the deactivated org state, i.e. when the
+   * selected organization filter is suspended.
+   */
   showDeactivatedOrg$: Observable<boolean> = combineLatest([
-    this.vaultPopupListFiltersService.filters$.pipe(distinctUntilKeyChanged("organization")),
+    this.vaultPopupListFiltersService.filters$.pipe(
+      distinctUntilChanged(
+        (previous, current) => previous.organization?.id === current.organization?.id,
+      ),
+    ),
     this.organizations$,
   ]).pipe(
     map(([filters, orgs]) => {
-      if (!filters.organization || filters.organization.id === MY_VAULT_ID) {
+      const selectedOrg = filters.organization;
+
+      // "My vault" is not an organization and can never be suspended.
+      if (!selectedOrg || selectedOrg.id === MY_VAULT_ID) {
         return false;
       }
 
-      const org = orgs.find((o) => o.id === filters?.organization?.id);
+      const org = orgs.find((o) => o.id === selectedOrg.id);
       return org ? !org.enabled : false;
     }),
   );
@@ -315,6 +359,7 @@ export class VaultPopupItemsService {
           const collectionMap = Object.fromEntries(collections.map((col) => [col.id, col]));
           return ciphers
             .filter((c) => CipherViewLikeUtils.isDeleted(c))
+            .filter((c) => hasAccessibleOrganization(c, orgMap))
             .map(
               (cipher) =>
                 ({
@@ -343,10 +388,25 @@ export class VaultPopupItemsService {
     private accountService: AccountService,
     private ngZone: NgZone,
     private restrictedItemTypesService: RestrictedItemTypesService,
-  ) {}
+    private configService: ConfigService,
+    private vaultPopupListTableFiltersService: VaultPopupListTableFiltersService,
+  ) {
+    // Switching the active account must always clear the legacy search text. This service is
+    // `providedIn: "root"` and lives through the switch, so manual clearing is necessary.
+    // The VFO1 search text is stored per user, so it needs no clearing.
+    this.activeUserId$
+      .pipe(distinctUntilChanged(), skip(1), takeUntilDestroyed())
+      .subscribe(() => this.cachedSearchText.set(""));
+  }
 
+  /** Sets the legacy search text, which is held in the popup view cache. */
   applyFilter(newSearchText: string) {
     this.cachedSearchText.set(newSearchText);
+  }
+
+  /** Sets the search text for the vault in view, stored per user and vault (VFO1). */
+  applyScopedFilter(newSearchText: string) {
+    void this.vaultPopupListTableFiltersService.setSearchText(newSearchText);
   }
 
   /**
@@ -377,6 +437,18 @@ export class VaultPopupItemsService {
     return this.cipherService.sortCiphersByLastUsedThenName(a, b);
   }
 }
+
+/**
+ * Whether the cipher is personal or belongs to an organization the user is still a member of.
+ *
+ * A sync replaces organizations before ciphers, so after a user is revoked or removed from an
+ * organization there is a window where that organization's ciphers are still listed but the
+ * organization itself is gone. Those ciphers are no longer accessible and must not be rendered.
+ */
+const hasAccessibleOrganization = (
+  cipher: CipherViewLike,
+  orgMap: Record<string, Organization>,
+): boolean => !cipher.organizationId || orgMap[cipher.organizationId as OrganizationId] != null;
 
 /**
  * Operator that waits until the active account has synced at least once before allowing the source to continue emission.

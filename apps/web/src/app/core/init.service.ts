@@ -3,16 +3,15 @@ import { firstValueFrom } from "rxjs";
 
 import { AbstractThemingService } from "@bitwarden/angular/platform/services/theming/theming.service.abstraction";
 import { WINDOW } from "@bitwarden/angular/services/injection-tokens";
+import { AutomationDriver } from "@bitwarden/automation-driver";
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
 import { TokenService } from "@bitwarden/common/auth/abstractions/token.service";
 import { OrganizationInviteService } from "@bitwarden/common/auth/organization-invite";
 import { TwoFactorService } from "@bitwarden/common/auth/two-factor";
 import { EventUploadService as EventUploadServiceAbstraction } from "@bitwarden/common/dirt/event-logs";
 import { EventUploadService } from "@bitwarden/common/dirt/event-logs/services/event-upload.service";
-import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
-import { SharedUnlockFollowerService } from "@bitwarden/common/key-management/shared-unlock";
+import { SharedUnlockPeerService } from "@bitwarden/common/key-management/shared-unlock";
 import { DefaultVaultTimeoutService } from "@bitwarden/common/key-management/vault-timeout";
-import { ConfigService } from "@bitwarden/common/platform/abstractions/config/config.service";
 import { I18nService as I18nServiceAbstraction } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { SdkLoadService } from "@bitwarden/common/platform/abstractions/sdk/sdk-load.service";
 import { IpcService } from "@bitwarden/common/platform/ipc";
@@ -24,7 +23,7 @@ import { TaskService } from "@bitwarden/common/vault/tasks";
 import { KeyService as KeyServiceAbstraction } from "@bitwarden/key-management";
 // eslint-disable-next-line no-restricted-imports
 import { EncryptService, LegacyCompatKeyService } from "@bitwarden/legacy-crypto";
-import { LogService } from "@bitwarden/logging";
+import { limitPerformanceMeasurements, LogService } from "@bitwarden/logging";
 import { UnlockService } from "@bitwarden/unlock";
 
 import { VersionService } from "../platform/version.service";
@@ -50,20 +49,25 @@ export class InitService {
     private taskService: TaskService,
     private readonly migrationRunner: MigrationRunner,
     @Inject(DOCUMENT) private document: Document,
-    private configService: ConfigService,
-    private sharedUnlockFollowerService: SharedUnlockFollowerService,
+    private sharedUnlockPeerService: SharedUnlockPeerService,
     private legacyCompatKeyService: LegacyCompatKeyService,
     private organizationInviteService: OrganizationInviteService,
     private logService: LogService,
+    private automationDriver: AutomationDriver,
   ) {}
 
   init() {
     return async () => {
+      limitPerformanceMeasurements();
       await this.sdkLoadService.loadAndInit();
       await this.migrationRunner.run();
 
       const accounts = await firstValueFrom(this.accountService.accounts$);
       await this.tokenService.cleanupTokenStorage(Object.keys(accounts) as UserId[]);
+
+      // Shared unlock starts before auto unlock, so the peer's unlock hook reports the restored unlock.
+      await this.ipcService.init();
+      await this.sharedUnlockPeerService.start();
 
       const activeAccount = await firstValueFrom(this.accountService.activeAccount$);
       if (activeAccount) {
@@ -86,10 +90,6 @@ export class InitService {
       htmlEl.classList.add("locale_" + this.i18nService.translationLocale);
       this.themingService.applyThemeChangesTo(this.document);
       this.versionService.applyVersionToWindow();
-      await this.ipcService.init();
-      if (await this.configService.getFeatureFlag(FeatureFlag.SharedUnlockPart2)) {
-        await this.sharedUnlockFollowerService.start();
-      }
       this.taskService.listenForTaskNotifications();
 
       // Opportunistic sweep of any sealed open-org-invite secrets whose TTL has expired
@@ -109,6 +109,7 @@ export class InitService {
         this.legacyCompatKeyService,
       );
       containerService.attachToGlobal(this.win);
+      this.automationDriver.attachToGlobal(this.win);
     };
   }
 }

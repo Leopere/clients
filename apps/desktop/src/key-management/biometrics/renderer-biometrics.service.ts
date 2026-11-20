@@ -19,7 +19,7 @@ import {
   BiometricsUnlock,
   BiometricsStatus as SdkBiometricsStatus,
 } from "@bitwarden/sdk-internal";
-import { UnlockService } from "@bitwarden/unlock";
+import { UnlockMethod, UnlockService } from "@bitwarden/unlock";
 import { UserId } from "@bitwarden/user-core";
 
 import { DesktopBiometricsService } from "./desktop.biometrics.service";
@@ -52,7 +52,11 @@ class BiometricsUnlockDriver implements BiometricsUnlock {
     }
 
     if (SET_USERKEY_UNLOCK) {
-      await this.unlockService.unlockWithDecryptedUserKey(fromSdkUserId(user_id), key);
+      await this.unlockService.unlockWithDecryptedUserKey(
+        fromSdkUserId(user_id),
+        key,
+        UnlockMethod.Biometrics,
+      );
     }
     return key.toSdk();
   }
@@ -139,15 +143,8 @@ export class RendererBiometricsService extends DesktopBiometricsService {
   async enrollPersistent(userId: UserId, key: SymmetricCryptoKey): Promise<void> {
     await ipc.keyManagement.biometric.enrollPersistent(userId, key.toBase64());
     await SdkLoadService.Ready;
-    const keyId = CryptoClient.get_key_id_for_symmetric_key(key.toEncoded());
-    if (keyId != null) {
-      await this.biometricStateService.setBiometricEnrolledKeyId(
-        userId,
-        Utils.fromBufferToB64(keyId),
-      );
-    } else {
-      await this.biometricStateService.setBiometricEnrolledKeyId(userId, null);
-    }
+    const keyId = CryptoClient.get_key_id_for_symmetric_key(key.toEncoded())!;
+    await this.biometricStateService.setBiometricEnrolledKeyId(userId, Utils.fromArrayToHex(keyId));
   }
 
   async hasPersistentKey(userId: UserId): Promise<boolean> {

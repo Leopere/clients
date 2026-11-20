@@ -364,7 +364,12 @@ describe("Firefox fork identity", () => {
         "Download the diagnostic report before sharing it with your server administrator or support provider.",
       );
       expect(built.awaitDesktopDesc.message).toContain("compatible desktop app");
-      expect(FORK_IDENTITY_MESSAGE_KEYS).toHaveLength(126);
+      expect(built.couldNotDecryptVaultItem.message).toContain(
+        "Provide the item ID to your server administrator",
+      );
+      expect(built.couldNotDecryptVaultItems.message).toContain(
+        "Provide the item IDs to your server administrator",
+      );
       for (const key of FORK_IDENTITY_MESSAGE_KEYS) {
         expect(built[key].message).toBe(builtEnglish[key].message);
       }

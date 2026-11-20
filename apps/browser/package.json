@@ -1,6 +1,6 @@
 {
   "name": "@bitwarden/browser",
-  "version": "2026.8.0",
+  "version": "2026.11.0",
   "scripts": {
     "assess:upstream": "./scripts/assess-upstream.sh",
     "build": "npm run build:chrome",
@@ -28,10 +28,12 @@
     "build:prod:opera": "cross-env NODE_ENV=production npm run build:opera",
     "build:prod:safari": "cross-env NODE_ENV=production npm run build:safari",
     "build:beta:chrome": "cross-env CHANNEL=beta npm run build:prod:chrome",
+    "build:beta:firefox": "cross-env CHANNEL=beta npm run build:prod:firefox",
     "dist:chrome": "npm run build:prod:chrome && mkdir -p dist && ./scripts/compress.sh dist-chrome.zip",
     "dist:beta:chrome": "npm run build:beta:chrome && npm run update:beta:chrome && mkdir -p dist && ./scripts/compress.sh dist-chrome.zip",
     "dist:edge": "npm run build:prod:edge && mkdir -p dist && ./scripts/compress.sh dist-edge.zip",
     "dist:firefox": "cross-env MANIFEST_VERSION=2 npm run build:prod:firefox && mkdir -p dist && ./scripts/compress.sh dist-firefox.zip",
+    "dist:beta:firefox": "npm run build:beta:firefox && npm run update:beta:chrome && mkdir -p dist && ./scripts/compress.sh dist-firefox.zip",
     "dist:fork:firefox": "npm run build:fork:prod:firefox && ./scripts/package-firefox-fork.sh fork-dist-firefox.zip 2",
     "auth:amo:fork:firefox": "./scripts/amo-auth.zsh",
     "release:check:fork:firefox": "node ./scripts/release-check-firefox-fork.mjs",
@@ -52,6 +54,6 @@
     "test:watch:all": "jest --watchAll",
     "test:clearCache": "jest --clear-cache",
     "update:dev:chrome": "./scripts/update-manifest-dev.sh",
-    "update:beta:chrome": "./scripts/update-manifest-beta.sh"
+    "update:beta": "./scripts/update-manifest-beta.sh"
   }
 }

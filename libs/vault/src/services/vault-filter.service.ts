@@ -45,13 +45,13 @@ import { ServiceUtils } from "@bitwarden/common/vault/service-utils";
 import { COLLAPSED_GROUPINGS } from "@bitwarden/common/vault/services/key-state/collapsed-groupings.state";
 import { CipherListView } from "@bitwarden/sdk-internal";
 
+import { VaultFilterService as VaultFilterServiceAbstraction } from "../abstractions/vault-filter.service";
 import {
-  VaultFilterServiceAbstraction,
   CipherTypeFilter,
   CollectionFilter,
   FolderFilter,
   OrganizationFilter,
-} from "..";
+} from "../models/vault-filter.type";
 
 import { Vfo1TerminologyService } from "./vfo1-terminology.service";
 
@@ -88,11 +88,20 @@ export class VaultFilterService implements VaultFilterServiceAbstraction {
 
   protected _organizationFilter = new BehaviorSubject<Organization>(null);
 
+  /**
+   * Ciphers that decide which folders have items under an org filter. Excludes PAM-gated
+   * ("partial") rows so a gated cipher never surfaces a folder; the web individual vault overrides
+   * this to include them.
+   */
+  protected folderFilterCiphers$(userId: UserId): Observable<CipherView[] | CipherListView[]> {
+    return this.cipherService.cipherListViews$(userId);
+  }
+
   filteredFolders$: Observable<FolderView[]> = this.activeUserId$.pipe(
     switchMap((userId) =>
       combineLatest([
         this.folderService.folderViews$(userId),
-        this.cipherService.cipherListViews$(userId),
+        this.folderFilterCiphers$(userId),
         this._organizationFilter,
       ]),
     ),
@@ -343,6 +352,8 @@ export class VaultFilterService implements VaultFilterServiceAbstraction {
         const collectionCopy = cloneCollection(
           new CollectionView({ ...c, name: c.name }),
         ) as CollectionFilter;
+        // `new CollectionView(...)` resets `hasEnabledAccessRule`, so copy it explicitly.
+        collectionCopy.hasEnabledAccessRule = c.hasEnabledAccessRule;
         collectionCopy.icon = this.vfo1TerminologyService.iconClass(
           c.type === CollectionTypes.DefaultUserCollection ? "bwi-user" : "bwi-collection-shared",
         );

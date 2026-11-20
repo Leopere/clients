@@ -9,14 +9,23 @@
 <!-- Renders a crumb as static text (current page), a link (routed), or a button. -->
 <ng-template #crumb let-breadcrumb="breadcrumb">
   @if (breadcrumb.isActiveRoute()) {
-    <span
-      [class]="activeBreadcrumbStyles"
-      [bitTypography]="size() === 'small' ? 'h6' : 'h3'"
-      aria-current="page"
-      tabindex="0"
-    >
-      <ng-container [ngTemplateOutlet]="breadcrumb.content()"></ng-container>
-    </span>
+    @if (displayActiveAsHeader()) {
+      <h1
+        [class]="activeBreadcrumbStyles"
+        [bitTypography]="size() === 'small' ? 'h6' : 'h3'"
+        aria-current="page"
+      >
+        <ng-container [ngTemplateOutlet]="breadcrumb.content()"></ng-container>
+      </h1>
+    } @else {
+      <span
+        [class]="activeBreadcrumbStyles"
+        [bitTypography]="size() === 'small' ? 'h6' : 'h3'"
+        aria-current="page"
+      >
+        <ng-container [ngTemplateOutlet]="breadcrumb.content()"></ng-container>
+      </span>
+    }
   } @else if (breadcrumb.route()) {
     <a
       [class]="breadcrumbStyles"
@@ -89,6 +98,13 @@
       </span>
     }
   }
+  <!--
+    `bit-header` renders its title suffix here if the active crumb is the page heading. Kept in
+    the DOM (hidden while empty) so its width can be observed and reserved.
+  -->
+  <span #titleSuffixContainer class="tw-ms-1 tw-flex tw-shrink-0 tw-items-center empty:tw-hidden">
+    <ng-container #titleSuffixOutlet />
+  </span>
   @if (showTrailingArrow()) {
     <ng-container [ngTemplateOutlet]="arrow" />
   }

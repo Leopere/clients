@@ -19,6 +19,7 @@ import { PolicyService } from "@bitwarden/common/admin-console/abstractions/poli
 import { CollectionView } from "@bitwarden/common/admin-console/models/collections";
 import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
+import { AvatarService } from "@bitwarden/common/auth/abstractions/avatar.service";
 import { AutofillSettingsServiceAbstraction } from "@bitwarden/common/autofill/services/autofill-settings.service";
 import { DomainSettingsService } from "@bitwarden/common/autofill/services/domain-settings.service";
 import { EventCollectionService } from "@bitwarden/common/dirt/event-logs";
@@ -167,6 +168,10 @@ export default {
           } as Partial<AccountService>,
         },
         {
+          provide: AvatarService,
+          useValue: { getUserAvatarColor$: () => of("#175ddc") },
+        },
+        {
           provide: CipherFormService,
           useClass: TestAddEditFormService,
         },
@@ -234,6 +239,7 @@ export default {
           useValue: {
             getClientType: () => ClientType.Browser,
             getDevice: () => DeviceType.ChromeExtension,
+            isSafari: () => false,
           },
         },
         {
@@ -241,6 +247,10 @@ export default {
           useValue: {
             activeAccount$: new BehaviorSubject({ email: "test@example.com" }),
           },
+        },
+        {
+          provide: AvatarService,
+          useValue: { getUserAvatarColor$: () => of("#175ddc") },
         },
         {
           provide: CipherFormCacheService,
@@ -384,6 +394,33 @@ export const WithSubmitButton: Story = {
       `,
     };
   },
+};
+
+/** Provides a `ConfigService` with only the HTTP authentication feature flag turned on */
+const withHTTPAuthenticationFeatureFlag = moduleMetadata({
+  providers: [
+    {
+      provide: ConfigService,
+      useValue: {
+        getFeatureFlag: (flag: FeatureFlag) =>
+          Promise.resolve(flag === FeatureFlag.EnableBasicAuthResponse),
+        getFeatureFlag$: (flag: FeatureFlag) =>
+          new BehaviorSubject(flag === FeatureFlag.EnableBasicAuthResponse),
+      },
+    },
+  ],
+});
+
+/** Editing a login with no URIs, so the HTTP authentication setting can be turned on */
+export const HTTPAuthentication: Story = {
+  ...Edit,
+  decorators: [withHTTPAuthenticationFeatureFlag],
+};
+
+/** Adding a login whose URI uses the default match strategy, so the HTTP authentication setting is disabled */
+export const HTTPAuthenticationRequiresMatchDetection: Story = {
+  ...Add,
+  decorators: [withHTTPAuthenticationFeatureFlag],
 };
 
 export const OrganizationDataOwnershipEnabled: Story = {

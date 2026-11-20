@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, computed, OnDestroy, OnInit } from "@angular/core";
+import { toSignal } from "@angular/core/rxjs-interop";
 import { FormBuilder, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import {
@@ -26,17 +27,23 @@ import { OrganizationResponse } from "@bitwarden/common/admin-console/models/res
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
 import { SecretVerificationRequest } from "@bitwarden/common/auth/models/request/secret-verification.request";
 import { getUserId } from "@bitwarden/common/auth/services/account.service";
+import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
+import { ConfigService } from "@bitwarden/common/platform/abstractions/config/config.service";
 import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.service";
 import { PlatformUtilsService } from "@bitwarden/common/platform/abstractions/platform-utils.service";
 import { Utils } from "@bitwarden/common/platform/misc/utils";
 import { OrganizationId } from "@bitwarden/common/types/guid";
-import { DialogService, ToastService } from "@bitwarden/components";
+import { BreadcrumbsModule, DialogService, ItemModule, ToastService } from "@bitwarden/components";
 import { KeyService } from "@bitwarden/key-management";
 // eslint-disable-next-line no-restricted-imports
 import { LegacyCompatKeyService } from "@bitwarden/legacy-crypto";
-import { Vfo1TerminologyService } from "@bitwarden/vault";
+import { Vfo1I18nPipe, Vfo1TerminologyService } from "@bitwarden/vault";
 
+import { DangerZoneComponent } from "../../../auth/settings/account/danger-zone.component";
 import { ApiKeyComponent } from "../../../auth/settings/security/api-key.component";
+import { AccountFingerprintComponent } from "../../../key-management/account-fingerprint/account-fingerprint.component";
+import { HeaderModule } from "../../../layouts/header/header.module";
+import { SharedModule } from "../../../shared";
 import { PurgeVaultComponent } from "../../../vault/settings/purge-vault.component";
 
 import { DeleteOrganizationDialogResult, openDeleteOrganizationDialog } from "./components";
@@ -46,7 +53,15 @@ import { DeleteOrganizationDialogResult, openDeleteOrganizationDialog } from "./
 @Component({
   selector: "app-org-account",
   templateUrl: "account.component.html",
-  standalone: false,
+  imports: [
+    SharedModule,
+    HeaderModule,
+    BreadcrumbsModule,
+    ItemModule,
+    AccountFingerprintComponent,
+    DangerZoneComponent,
+    Vfo1I18nPipe,
+  ],
 })
 export class AccountComponent implements OnInit, OnDestroy {
   selfHosted = false;
@@ -83,6 +98,22 @@ export class AccountComponent implements OnInit, OnDestroy {
   protected organizationId!: string;
   protected publicKeyBuffer!: Uint8Array;
 
+  protected readonly showBreadcrumbs = toSignal(
+    this.configService.getFeatureFlag$(FeatureFlag.VFO1Foundation),
+    { initialValue: false },
+  );
+
+  private readonly _orgIdFromRoute = toSignal(
+    this.route.params.pipe(map((p) => p["organizationId"] as OrganizationId)),
+    { initialValue: "" as OrganizationId },
+  );
+
+  protected readonly orgSettingsRoute = computed(() => [
+    "/organizations",
+    this._orgIdFromRoute(),
+    "settings",
+  ]);
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -99,6 +130,7 @@ export class AccountComponent implements OnInit, OnDestroy {
     private formBuilder: FormBuilder,
     private toastService: ToastService,
     private vfo1TerminologyService: Vfo1TerminologyService,
+    private configService: ConfigService,
   ) {}
 
   async ngOnInit() {
@@ -201,14 +233,15 @@ export class AccountComponent implements OnInit, OnDestroy {
   };
 
   submitCollectionManagement = async () => {
-    const request = new OrganizationCollectionManagementUpdateRequest();
-    request.limitCollectionCreation =
-      this.collectionManagementFormGroup.value.limitCollectionCreation ?? false;
-    request.limitCollectionDeletion =
-      this.collectionManagementFormGroup.value.limitCollectionDeletion ?? false;
-    request.allowAdminAccessToAllCollectionItems =
-      this.collectionManagementFormGroup.value.allowAdminAccessToAllCollectionItems ?? false;
-    request.limitItemDeletion = this.collectionManagementFormGroup.value.limitItemDeletion ?? false;
+    const request = new OrganizationCollectionManagementUpdateRequest({
+      limitCollectionCreation:
+        this.collectionManagementFormGroup.value.limitCollectionCreation ?? false,
+      limitCollectionDeletion:
+        this.collectionManagementFormGroup.value.limitCollectionDeletion ?? false,
+      allowAdminAccessToAllCollectionItems:
+        this.collectionManagementFormGroup.value.allowAdminAccessToAllCollectionItems ?? false,
+      limitItemDeletion: this.collectionManagementFormGroup.value.limitItemDeletion ?? false,
+    });
 
     await this.organizationApiService.updateCollectionManagement(this.organizationId, request);
 

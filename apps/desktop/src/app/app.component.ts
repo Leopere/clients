@@ -1,11 +1,11 @@
 // FIXME: Update this file to be type safe and remove this and next line
 // @ts-strict-ignore
 import { Component, DestroyRef, NgZone, OnDestroy, OnInit } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 import { Router } from "@angular/router";
 import { filter, firstValueFrom, lastValueFrom, map, Subject, takeUntil, timeout } from "rxjs";
 
-import { AccountDeletionService } from "@bitwarden/angular/auth/account-deletion/account-deletion.service";
+import { AccountDeletionDialogService } from "@bitwarden/angular/auth/account-deletion";
 import { LoginApprovalDialogComponent } from "@bitwarden/angular/auth/login-approval";
 import { DeviceTrustToastService } from "@bitwarden/angular/auth/services/device-trust-toast.service.abstraction";
 import { DocumentLangSetter } from "@bitwarden/angular/platform/i18n";
@@ -14,7 +14,6 @@ import { FingerprintDialogComponent } from "@bitwarden/auth/angular";
 import {
   AuthRequestServiceAbstraction,
   DESKTOP_SSO_CALLBACK,
-  LogoutReason,
   UserDecryptionOptionsServiceAbstraction,
 } from "@bitwarden/auth/common";
 import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
@@ -23,15 +22,17 @@ import { AuthService } from "@bitwarden/common/auth/abstractions/auth.service";
 import { SsoLoginServiceAbstraction } from "@bitwarden/common/auth/abstractions/sso-login.service.abstraction";
 import { TokenService } from "@bitwarden/common/auth/abstractions/token.service";
 import { UserVerificationService } from "@bitwarden/common/auth/abstractions/user-verification/user-verification.service.abstraction";
+import { AccountSwitcherService } from "@bitwarden/common/auth/account-switcher";
 import { AuthenticationStatus } from "@bitwarden/common/auth/enums/authentication-status";
+import { LogoutReason } from "@bitwarden/common/auth/logout";
 import { getOptionalUserId, getUserId } from "@bitwarden/common/auth/services/account.service";
 import { PendingAuthRequestsStateService } from "@bitwarden/common/auth/services/auth-request-answering/pending-auth-requests.state";
 import { BillingAccountProfileStateService } from "@bitwarden/common/billing/abstractions";
 import { PremiumCheckoutPendingService } from "@bitwarden/common/billing/abstractions/account/premium-checkout-pending.service";
 import { EventUploadService } from "@bitwarden/common/dirt/event-logs";
 import { FeatureFlag } from "@bitwarden/common/enums/feature-flag.enum";
-import { ProcessReloadServiceAbstraction } from "@bitwarden/common/key-management/abstractions/process-reload.service";
 import { PinServiceAbstraction } from "@bitwarden/common/key-management/pin/pin.service.abstraction";
+import { ProcessReloadServiceAbstraction } from "@bitwarden/common/key-management/process-reload";
 import {
   VaultTimeout,
   VaultTimeoutAction,
@@ -83,23 +84,10 @@ const SyncInterval = 6 * 60 * 60 * 1000; // 6 hours
 @Component({
   selector: "app-root",
   styles: [],
-  template: `
-    @if (showHeader$ | async) {
-      <div class="header"></div>
-    }
-
-    <div id="container">
-      @if (loading) {
-        <div class="loading">
-          <bit-spinner />
-        </div>
-      } @else {
-        <router-outlet />
-      }
-    </div>
-
-    <bit-toast-container></bit-toast-container>
-  `,
+  host: {
+    "[class.vfo1]": "vfo1Enabled()",
+  },
+  templateUrl: "app.component.html",
   standalone: false,
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -159,15 +147,22 @@ export class AppComponent implements OnInit, OnDestroy {
     private authRequestService: AuthRequestServiceAbstraction,
     private authRequestAnsweringService: AuthRequestAnsweringService,
     private ssoLoginService: SsoLoginServiceAbstraction,
-    private accountDeletionService: AccountDeletionService,
+    private accountDeletionDialogService: AccountDeletionDialogService,
     private premiumCheckoutPendingService: PremiumCheckoutPendingService,
     private billingAccountProfileStateService: BillingAccountProfileStateService,
+    private accountSwitcherService: AccountSwitcherService,
   ) {
     this.deviceTrustToastService.setupListeners$.pipe(takeUntilDestroyed()).subscribe();
 
     const langSubscription = this.documentLangSetter.start();
     this.destroyRef.onDestroy(() => langSubscription.unsubscribe());
   }
+
+  // remove when VFO1 flag is removed
+  protected readonly vfo1Enabled = toSignal(
+    this.configService.getFeatureFlag$(FeatureFlag.VFO1Foundation),
+    { initialValue: false },
+  );
 
   ngOnInit() {
     this.accountService.activeAccount$.pipe(takeUntil(this.destroy$)).subscribe((account) => {
@@ -206,7 +201,6 @@ export class AppComponent implements OnInit, OnDestroy {
             // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this.updateAppMenu();
-            this.processReloadService.cancelProcessReload();
             break;
           case "loggedOut":
             this.modalService.closeAll();
@@ -214,7 +208,6 @@ export class AppComponent implements OnInit, OnDestroy {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this.updateAppMenu();
             await this.systemService.clearPendingClipboard();
-            await this.processReloadService.startProcessReload();
             break;
           case "authBlocked":
             // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
@@ -244,15 +237,6 @@ export class AppComponent implements OnInit, OnDestroy {
             }
             await this.updateAppMenu();
             await this.systemService.clearPendingClipboard();
-            await this.processReloadService.startProcessReload();
-            break;
-          case "startProcessReload":
-            // FIXME: Verify that this floating promise is intentional. If it is, add an explanatory comment and ensure there is proper error handling.
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            this.processReloadService.startProcessReload();
-            break;
-          case "cancelProcessReload":
-            this.processReloadService.cancelProcessReload();
             break;
           case "reloadProcess":
             ipc.platform.reloadProcess();
@@ -419,7 +403,11 @@ export class AppComponent implements OnInit, OnDestroy {
             break;
           }
           case "importVault":
-            await this.dialogService.open(ImportDesktopComponent);
+            if (await this.configService.getFeatureFlag(FeatureFlag.ImportUpgrade)) {
+              await this.router.navigate(["/import"]);
+            } else {
+              await this.dialogService.open(ImportDesktopComponent);
+            }
             break;
           case "exportVault":
             await this.dialogService.open(ExportDesktopComponent);
@@ -460,10 +448,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
             await this.accountService.switchAccount(message.userId);
 
-            const locked =
-              (await this.authService.getAuthStatus(message.userId)) ===
-              AuthenticationStatus.Locked;
-            if (locked) {
+            const authStatus = await this.authService.getAuthStatus(message.userId);
+            if (authStatus === AuthenticationStatus.Locked) {
               this.modalService.closeAll();
 
               // We only have to handle TDE lock on "switchAccount" message scenarios but not normal
@@ -482,6 +468,12 @@ export class AppComponent implements OnInit, OnDestroy {
               } else {
                 await this.router.navigate(["lock"]);
               }
+            } else if (authStatus === AuthenticationStatus.LoggedOut) {
+              this.modalService.closeAll();
+              // A logged-out account has nothing to sync and cannot open the vault. Leave `loading`
+              // untouched: toggling it re-creates the router outlet, which remounts every routed
+              // component and re-runs its initialization.
+              await this.router.navigate(["login"]);
             } else {
               this.messagingService.send("unlocked");
               this.loading = true;
@@ -542,6 +534,31 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       });
     });
+
+    void this.resolveActiveAccount();
+  }
+
+  /**
+   * Replaces a logged-out active account with a switchable one, or clears it. Accounts whose
+   * tokens live only in memory are logged out after every launch and process reload, so this
+   * runs once per renderer load.
+   *
+   * It must run after the message handler subscribes, and it must navigate: a process reload
+   * restores the previous route, so the root route's redirect guard does not choose the page.
+   * Sending `switchAccount` reuses that handler's routing and sync.
+   */
+  private async resolveActiveAccount() {
+    try {
+      const resolution = await this.accountSwitcherService.resolveActiveAccount();
+      if (resolution.action === "switch") {
+        this.messagingService.send("switchAccount", { userId: resolution.targetUserId });
+      } else if (resolution.action === "clear") {
+        await this.accountService.switchAccount(null);
+        await this.router.navigate(["login"]);
+      }
+    } catch (e) {
+      this.logService.error("Failed to resolve the active account on load", e);
+    }
   }
 
   ngOnDestroy() {
@@ -700,6 +717,9 @@ export class AppComponent implements OnInit, OnDestroy {
   // Even though the userId parameter is no longer optional doesn't mean a message couldn't be
   // passing null-ish values to us.
   private async logOut(logoutReason: LogoutReason, userId: UserId) {
+    // Desktop logout paths bypass DefaultLogoutService (see PM-21212 TODO above),
+    // so the log line that lives there is mirrored here to cover every caller.
+    this.logService.info("Logging out user %s for reason: %s", userId, logoutReason);
     await this.displayLogoutReason(logoutReason);
 
     const activeUserId = await firstValueFrom(
@@ -715,7 +735,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     const nextUpAccount =
       activeUserId === userBeingLoggedOut
-        ? await firstValueFrom(this.accountService.nextUpAccount$) // We'll need to switch accounts
+        ? await firstValueFrom(this.accountSwitcherService.nextSwitchableAccount$) // We'll need to switch accounts
         : null;
 
     try {
@@ -772,7 +792,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // This must come last otherwise the logout will prematurely trigger
     // a process reload before all the state service user data can be cleaned up
-    this.authService.logOut(async () => {}, userBeingLoggedOut);
+    this.authService.logOut(async () => {
+      // Wipe the current process to clear active secrets in memory.
+      await this.processReloadService.reloadProcess();
+    }, userBeingLoggedOut);
   }
 
   private async recordActivity() {
@@ -905,7 +928,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private async deleteAccount() {
-    await this.accountDeletionService.openDeleteAccountFlow();
+    await this.accountDeletionDialogService.openDeleteAccountFlow();
   }
 
   private async processPendingAuthRequests() {
