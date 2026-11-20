@@ -49,14 +49,14 @@ Provenance checks in this branch now enforce that release inputs and emitted art
 - `@bitwarden/commercial-sdk-internal` dependency declarations and lock entries,
 - upstream wordmarks and all unreviewed files under the XPI's `images/` directory,
 - the Bitwarden shield glyph and its CSS selectors from the emitted icon fonts,
-- user-visible Bitwarden identity in every packaged locale message. The 126 messages that carry
+- user-visible Bitwarden identity in every packaged locale message. Messages that carry
   upstream identity in at least one source locale use reviewed neutral English wording until
   independent fork translations are available,
 - upstream contact, product, download, welcome, and official-store links blocked by the policy,
 
 while preserving required attribution paths and notices. The policy pins the exact reviewed fork
 icon hashes, shield-free font hashes, neutralized legacy SVG export hashes, GPL SDK version, license,
-repository, and WebAssembly hash. `@bitwarden/sdk-internal` and other `@bitwarden/*` modules remain
+repository, and hashes of both the SIMD and MVP WebAssembly payloads. `@bitwarden/sdk-internal` and other `@bitwarden/*` modules remain
 upstream OSS dependencies in the build.
 
 The source archive intentionally excludes generated output, caches, `node_modules`, coverage data,

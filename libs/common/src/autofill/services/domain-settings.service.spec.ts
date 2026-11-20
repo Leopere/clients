@@ -909,6 +909,19 @@ describe("DefaultDomainSettingsService", () => {
       expect(url).toBeUndefined();
     });
 
+    it("emits undefined when the server advertises the retired rules feed", async () => {
+      fillAssistPolicyMock$.next([]);
+      serverConfigMock$.next({
+        environment: {
+          fillAssistRules: "https://github.com/bitwarden/map-the-web/releases/latest/download/",
+        },
+      });
+
+      const url = await firstValueFrom(domainSettingsService.effectiveFillAssistRulesUrl$);
+
+      expect(url).toBeUndefined();
+    });
+
     it("emits undefined when the policy URL is the default sentinel and server config has no URL", async () => {
       fillAssistPolicyMock$.next([
         makeFillAssistPolicy({ rulesUrl: "https://fillassist.bitwarden.com" }),

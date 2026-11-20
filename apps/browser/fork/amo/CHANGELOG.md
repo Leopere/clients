@@ -1,6 +1,9 @@
 # Vaultwarden Companion changelog
 
-## Unreleased
+## 2026.11.0
+
+- Integrated upstream browser 2026.11.0, including shared unlock and Vault Health updates.
+- Preserved Vaultwarden legacy cipher handling alongside the new partial-data parser.
 
 - Removed commercial code inputs from the fork (`bitwarden_license` modules and
   `@bitwarden/commercial-sdk-internal`) and documented the remaining `@bitwarden/*` namespace as

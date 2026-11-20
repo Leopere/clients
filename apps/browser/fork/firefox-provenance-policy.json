@@ -33,7 +33,10 @@
     "BITWARDEN SOFTWARE DEVELOPMENT KIT LICENSE AGREEMENT",
     ".bwi-bitwarden-shield",
     "glyph-name=\"bitwarden-shield\"",
-    "M843.1445333333332 799.9995733333333"
+    "M843.1445333333332 799.9995733333333",
+    "M28.916 4.484c1.363 0 2.424.522",
+    "M18.7697 12.9217V3.29292H12.0403V20.399",
+    "M37.825 5.714c1.754 0 3.119.665"
   ],
   "forbiddenPackagedText": [
     "https://assets.bitwarden.com/security/v1/",

@@ -299,7 +299,7 @@ module.exports.buildConfig = function buildConfig(params) {
     plugins.push(new FirefoxForkHtmlIdentityPlugin(forkIdentity.name));
     plugins.push(
       new webpack.NormalModuleReplacementPlugin(
-        /bitwarden-logo(?:-beta)?\.icon(?:\.ts)?$/,
+        /\/(?:bitwarden-logo(?:-beta)?\.icon|import-bitwarden\.icon|side-nav-logo-beta)(?:\.ts)?$/,
         path.resolve(__dirname, "webpack/firefox-fork-empty-logo.js"),
       ),
     );

@@ -1,1 +1,6 @@
-module.exports = { BitwardenLogo: undefined, BitwardenLogoBeta: undefined };
+module.exports = {
+  BitwardenLogo: undefined,
+  BitwardenLogoBeta: undefined,
+  ImportBitwardenIcon: undefined,
+  SideNavLogoBeta: undefined,
+};
