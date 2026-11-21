@@ -45,11 +45,14 @@ npm --workspace @bitwarden/browser run release:check:fork:firefox
 
 The release command runs focused fork compatibility tests, the common legacy cipher regression,
 targeted verification, creates the production Manifest V2 build, validates the fork identity, and
-runs `web-ext lint` in one flow. The current upstream cross-browser bundle reports 75 reviewed
-warnings: 27 uses of `eval` or `Function` in bundled dependencies, 10 dynamic `innerHTML`
+runs `web-ext lint` in one flow. The current upstream cross-browser bundle reports 76 reviewed
+warnings: 28 uses of `eval` or `Function` in bundled dependencies and webpack runtime fallbacks, 10 dynamic `innerHTML`
 assignments in the Angular/autofill runtime, and 38 references to APIs used only by other browser
 branches. The release gate fails on any lint error or any change to that exact warning inventory. It
 writes the XPI, source archive, hashes, and release manifest under `apps/browser/dist/release/`.
+The additional warning comes from webpack's global-object fallback in `notification/bar.js`.
+Supported Firefox versions return native `globalThis` before the constant `Function("return this")`
+fallback. The extension CSP still forbids JavaScript `unsafe-eval`.
 The source archive includes `SOURCE_REVISION.json`, so this command works after extraction outside
 Git and uses the original commit timestamp. The release manifest records the source commit and Git
 cleanliness, or `null` cleanliness for an extracted archive. AMO signing remains limited to the

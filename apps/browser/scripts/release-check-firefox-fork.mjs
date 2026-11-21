@@ -74,7 +74,9 @@ const excludedDirectoryNames = new Set([
 ]);
 
 const reviewedLintWarnings = Object.freeze({
-  DANGEROUS_EVAL: 27,
+  // The notification-bar webpack global fallback adds one constant Function constructor.
+  // Supported Firefox versions provide globalThis; CSP still forbids JavaScript eval.
+  DANGEROUS_EVAL: 28,
   UNSAFE_VAR_ASSIGNMENT: 10,
   UNSUPPORTED_API: 38,
 });
